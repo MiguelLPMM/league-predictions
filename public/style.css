@@ -1,0 +1,149 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, Arial, sans-serif;
+  background: #fff;
+  color: #111;
+}
+
+/* navbar */
+.nav {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 16px;
+  border-bottom: 1px solid #eee;
+  position: sticky;
+  top: 0;
+  background: #fff;
+  z-index: 10;
+}
+
+.nav a {
+  text-decoration: none;
+  color: #111;
+  padding: 6px 10px;
+  border-radius: 10px;
+}
+
+.nav a.active {
+  background: #f0f3ff;
+  color: #1e40af;
+}
+
+/* header layout (keeps title left, actions right) */
+.header{
+  max-width: 760px; margin: 16px auto; padding: 0 16px;
+  display:flex; align-items:center;
+}
+.header .title{ display:flex; align-items:center; gap:12px; }
+.header .actions{ margin-left:auto; }
+.league-logo{ width:40px; height:40px; object-fit:contain; flex:0 0 40px; }
+.header h1{ margin:0; font-size:clamp(1.25rem,2.2vw,1.6rem); font-weight:700; }
+
+/* material “copy” button */
+.copy-btn{
+  width:36px; height:36px; display:grid; place-items:center;
+  border-radius:12px; border:1px solid #e6e8f0; background:#f5f6fb; color:#111;
+  cursor:pointer; transition:background .15s ease, transform .05s ease;
+}
+.copy-btn:hover{ background:#eef1fb; }
+.copy-btn:active{ transform:translateY(1px); }
+.material-icons{ font-size:20px; line-height:1; }
+
+/* SECTION no longer positions the button */
+.section{ max-width:760px; margin:8px auto 24px; padding:0 16px; }
+
+/* list */
+#list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+  display: grid;
+  gap: 10px;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: transparent;
+  border: 0;
+  padding: 0;
+  user-select: none;
+  touch-action: none;
+}
+
+.pos {
+  width: 2.5ch;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  opacity: .9;
+}
+
+.card {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: #fff;
+  border: 1px solid #e5e5e5;
+  border-radius: 12px;
+}
+
+.badge {
+  width: 22px;
+  height: 22px;
+  object-fit: contain;
+  flex: 0 0 auto;
+}
+
+/* drag ghost */
+.drag-ghost {
+  position: fixed;
+  left: 0;
+  top: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: .96;
+  transform: translate(-9999px, -9999px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, .2);
+  list-style: none;
+}
+
+/* placeholder row looks normal */
+.placeholder.item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.placeholder.item .card {
+  border: 1px solid #e5e5e5;
+  background: #fff;
+}
+
+/* toast */
+.toast {
+  position: fixed;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #111;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 10px;
+  font-size: .9rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity .2s ease, transform .2s ease;
+}
+
+.toast.show {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
