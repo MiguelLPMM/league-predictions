@@ -4,15 +4,50 @@
     {
       "source": "/sw.js",
       "headers": [
-        { "key": "Cache-Control", "value": "no-cache, must-revalidate" },
-        { "key": "Service-Worker-Allowed", "value": "/" }
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, must-revalidate"
+        },
+        {
+          "key": "Service-Worker-Allowed",
+          "value": "/"
+        }
       ]
     },
     {
       "source": "/manifest.webmanifest",
       "headers": [
-        { "key": "Content-Type", "value": "application/manifest+json" }
+        {
+          "key": "Content-Type",
+          "value": "application/manifest+json"
+        }
       ]
+    }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/sync?league=premierleague",
+      "schedule": "0 3 * * *"
+    },
+    {
+      "path": "/api/cron/sync?league=laliga",
+      "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/sync?league=bundesliga",
+      "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/sync?league=seriea",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/sync?league=ligue1",
+      "schedule": "0 7 * * *"
+    },
+    {
+      "path": "/api/cron/sync?league=ligaportugal",
+      "schedule": "0 8 * * *"
     }
   ]
 }

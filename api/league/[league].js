@@ -1,10 +1,8 @@
-const { getLeagueInfo } = require('../../lib/footballData');
+const { getLeagueInfo } = require('../../lib/leagueData');
 
 module.exports = async (req, res) => {
   try {
-    const { data, stale } = await getLeagueInfo(req.query.league);
-    if (stale) res.setHeader('X-Data-Stale', '1');
-    res.status(200).json(data);
+    res.status(200).json(await getLeagueInfo(req.query.league));
   } catch (e) {
     if (e.status === 404) return res.status(404).json({ error: 'Unknown league' });
     console.error('league error:', e.message || e);
