@@ -9,12 +9,12 @@ body {
   color: #111;
 }
 
-/* navbar */
+/* top bar: hamburger, brand, league selector */
 .nav {
   display: flex;
   gap: 12px;
   align-items: center;
-  padding: 10px 16px;
+  padding: 8px 16px;
   border-bottom: 1px solid #eee;
   position: sticky;
   top: 0;
@@ -22,17 +22,85 @@ body {
   z-index: 10;
 }
 
-.nav a {
+.nav-leagues {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.nav-leagues::-webkit-scrollbar { display: none; }
+
+.nav-leagues a {
   text-decoration: none;
   color: #111;
   padding: 6px 10px;
   border-radius: 10px;
+  white-space: nowrap;
 }
 
-.nav a.active {
+.nav-leagues a.active {
   background: #f0f3ff;
   color: #1e40af;
 }
+
+/* buttons (confirm dialog) */
+.btn {
+  font: inherit; font-weight: 600; cursor: pointer;
+  padding: 9px 16px; border-radius: 12px; border: 1px solid #1e40af;
+  background: #1e40af; color: #fff;
+  transition: background .15s ease, transform .05s ease;
+}
+.btn:hover { background: #1a3699; }
+.btn:active { transform: translateY(1px); }
+.btn.secondary { background: #f5f6fb; color: #111; border-color: #e6e8f0; }
+.btn.secondary:hover { background: #eef1fb; }
+
+/* hamburger sidebar */
+.sidebar-overlay {
+  position: fixed; inset: 0; background: rgba(0, 0, 0, .35); z-index: 900;
+}
+.sidebar-overlay[hidden] { display: none; }
+
+.sidebar {
+  position: fixed; top: 0; left: 0; height: 100%;
+  width: clamp(220px, 70vw, 300px);
+  background: #fff;
+  transform: translateX(-100%);
+  transition: transform .25s ease;
+  z-index: 950;
+  display: flex; flex-direction: column;
+  padding: 1em;
+}
+.sidebar.open { transform: translateX(0); box-shadow: 2px 0 12px rgba(0, 0, 0, .15); }
+
+.sidebar-close {
+  align-self: flex-end; background: none; border: none; color: #111;
+  cursor: pointer; padding: 4px; border-radius: 8px; display: flex;
+}
+.sidebar-close:hover { background: #f5f6fb; }
+
+.sidebar-links { display: flex; flex-direction: column; gap: .4em; margin-top: 1em; }
+.sidebar-links a {
+  color: #111; text-decoration: none; padding: .6em .8em; border-radius: 10px; font-size: 1.05em;
+}
+.sidebar-links a:hover { background: #f5f6fb; }
+.sidebar-links a.active { background: #f0f3ff; color: #1e40af; font-weight: 600; }
+
+.sidebar-account { margin-top: auto; padding-top: 1em; border-top: 1px solid #eee; }
+
+.sidebar-account-btn {
+  display: flex; align-items: center; gap: .5em; width: 100%;
+  padding: .55em .8em; border-radius: 10px; cursor: pointer;
+  background: #f5f6fb; color: #111; border: 1px solid #e6e8f0; font: inherit;
+}
+.sidebar-account-btn:hover { background: #eef1fb; }
+
+.sidebar-user { display: flex; flex-direction: column; gap: .6em; }
+.sidebar-user-row { display: flex; align-items: center; gap: .6em; padding: .3em .2em; min-width: 0; }
+.sidebar-user-row img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
+.sidebar-user-row span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 
 /* header layout (keeps title left, actions right) */
 .header{
@@ -40,7 +108,7 @@ body {
   display:flex; align-items:center;
 }
 .header .title{ display:flex; align-items:center; gap:12px; }
-.header .actions{ margin-left:auto; }
+.header .actions{ margin-left:auto; display:flex; gap:8px; }
 .league-logo{ width:40px; height:40px; object-fit:contain; flex:0 0 40px; }
 .header h1{ margin:0; font-size:clamp(1.25rem,2.2vw,1.6rem); font-weight:700; }
 
@@ -51,6 +119,8 @@ body {
   cursor:pointer; transition:background .15s ease, transform .05s ease;
 }
 .copy-btn:hover{ background:#eef1fb; }
+.copy-btn[hidden]{ display:none; }
+.copy-btn.dim{ opacity:.45; }
 .copy-btn:active{ transform:translateY(1px); }
 .material-icons{ font-size:20px; line-height:1; }
 
@@ -147,3 +217,13 @@ body {
   opacity: 1;
   transform: translateX(-50%) translateY(0);
 }
+
+/* confirm dialog */
+dialog.confirm {
+  border: 1px solid #e6e8f0; border-radius: 16px; padding: 20px; max-width: min(420px, 90vw);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, .2);
+}
+dialog.confirm::backdrop { background: rgba(0, 0, 0, .35); }
+dialog.confirm h2 { margin: 0 0 8px; font-size: 1.1rem; }
+dialog.confirm p { margin: 0 0 16px; color: #374151; line-height: 1.4; }
+.confirm-actions { display: flex; justify-content: flex-end; gap: 10px; }

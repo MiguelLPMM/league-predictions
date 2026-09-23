@@ -1,4 +1,9 @@
 // set by each page: window.LEAGUE_PAGE = 'premierleague' | 'laliga' | ...
+import { supabaseClient as sb } from './supabaseClient.js';
+import { onUser, getAccessToken } from './auth.js';
+import { initShell, confirmDialog } from './shell.js';
+import { toast } from './notify.js';
+
 const LEAGUE = (window.LEAGUE_PAGE || 'premierleague').toLowerCase();
 
 if ('serviceWorker' in navigator) {
@@ -7,27 +12,20 @@ if ('serviceWorker' in navigator) {
     });
 }
 
-const navLinks = [
-    ['premierleague', 'Premier League'],
-    ['laliga', 'La Liga'],
-    ['bundesliga', 'Bundesliga'],
-    ['seriea', 'Serie A'],
-    ['ligue1', 'Ligue 1'],
-    ['ligaportugal', 'Liga Portugal'],
-];
-
 const list = document.getElementById('list');
 const header = document.getElementById('header');
 
-// build navbar
-const nav = document.getElementById('nav');
-if (nav) {
-    nav.innerHTML = navLinks.map(([slug, label]) =>
-        `<a href="/${slug}.html" class="${slug === LEAGUE ? 'active' : ''}">${label}</a>`
-    ).join('');
-}
+// page state
+const state = {
+    user: null,
+    teams: [],       // default (API) order, used by reset
+    ls: null,        // current league_season row (status, kickoff, matchweek)
+    entry: null,     // the signed-in user's saved entry for this league season
+    saving: false,
+};
 
-window.addEventListener('DOMContentLoaded', init);
+initShell({ league: LEAGUE });
+init();
 
 async function init() {
     const info = await loadLeagueInfo(LEAGUE);
@@ -41,17 +39,35 @@ async function init() {
             <h1>${esc(info.name)}</h1>
         </div>
         <div class="actions">
-            <button id="copy-standings" class="copy-btn" aria-label="Copy standings">
+            <button id="load-entry" class="copy-btn" title="Load my saved entry" aria-label="Load my saved entry" hidden>
+            <span class="material-icons">restore</span>
+            </button>
+            <button id="save-entry" class="copy-btn" title="Save prediction" aria-label="Save prediction" hidden>
+            <span class="material-icons">save</span>
+            </button>
+            <button id="reset-order" class="copy-btn" title="Reset order" aria-label="Reset order">
+            <span class="material-icons">refresh</span>
+            </button>
+            <button id="copy-standings" class="copy-btn" title="Copy standings" aria-label="Copy standings">
             <span class="material-icons">content_copy</span>
             </button>
         </div>
         `;
 
-        document.getElementById('copy-standings')
-            .addEventListener('click', copyStandings);
+        document.getElementById('copy-standings').addEventListener('click', copyStandings);
+        document.getElementById('reset-order').addEventListener('click', resetOrder);
+        document.getElementById('load-entry').addEventListener('click', loadSavedOrder);
+        document.getElementById('save-entry').addEventListener('click', onSave);
     }
 
-    await loadTeams(LEAGUE);
+    await Promise.all([loadTeams(LEAGUE), loadSeason()]);
+    updateActions();
+
+    onUser(async (user) => {
+        state.user = user;
+        await loadEntry();
+        updateActions();
+    });
 }
 
 async function loadLeagueInfo(slug) {
@@ -71,6 +87,7 @@ async function loadTeams(slug) {
         if (!r.ok) throw new Error(`teams ${r.status}`);
         const raw = await r.json();
         const teams = (raw || []).map(t => ({ id: t.id ?? '', name: t.name ?? 'Unknown', badge: t.badge ?? '' }));
+        state.teams = teams;
         render(teams);
     } catch (e) {
         console.error('teams error', e);
@@ -78,6 +95,131 @@ async function loadTeams(slug) {
     }
 }
 
+/* -------- Season state + saved entry -------- */
+
+async function loadSeason() {
+    try {
+        const { data: season } = await sb.from('seasons').select('season_year').eq('is_current', true).maybeSingle();
+        if (!season) return;
+        const { data } = await sb.from('league_seasons')
+            .select('id, status, first_kickoff_at, started_matchweek, is_manual')
+            .eq('league', LEAGUE).eq('season_year', season.season_year).maybeSingle();
+        state.ls = data;
+    } catch (e) {
+        console.error('season', e);
+    }
+}
+
+async function loadEntry() {
+    state.entry = null;
+    if (!state.user || !state.ls) return;
+    const { data, error } = await sb.from('entries')
+        .select('id, late_matchweek, created_at, updated_at')
+        .eq('league_season_id', state.ls.id).eq('user_id', state.user.id).maybeSingle();
+    if (error) console.error('entry', error);
+    state.entry = data;
+}
+
+// 'open' = before first kickoff, 'late' = started but not finished, 'closed'
+function phase() {
+    const ls = state.ls;
+    if (!ls || ls.is_manual || ls.status === 'concluded') return 'closed';
+    const kickoff = ls.first_kickoff_at ? Date.parse(ls.first_kickoff_at) : null;
+    return !kickoff || Date.now() < kickoff ? 'open' : 'late';
+}
+
+// Load/save only exist for signed-in users. Save keeps working as a button in
+// every state; when it can't save it explains why instead of disappearing.
+function updateActions() {
+    const loadBtn = document.getElementById('load-entry');
+    const saveBtn = document.getElementById('save-entry');
+    if (!loadBtn || !saveBtn) return;
+
+    const { user, entry } = state;
+    loadBtn.hidden = !user;
+    saveBtn.hidden = !user;
+    loadBtn.classList.toggle('dim', !entry);
+
+    const p = phase();
+    const locked = p === 'closed' || (p === 'late' && entry);
+    saveBtn.classList.toggle('dim', Boolean(locked) || state.saving);
+    const label = p === 'closed' ? 'Season finished' : locked ? 'Entry locked' : p === 'late' ? 'Submit late entry' : 'Save prediction';
+    saveBtn.title = label;
+    saveBtn.setAttribute('aria-label', label);
+}
+
+function resetOrder() {
+    if (!state.teams.length) return;
+    render(state.teams);
+    toast('Order reset');
+}
+
+async function loadSavedOrder() {
+    if (!state.entry) { toast('You have no saved entry yet'); return; }
+    const { data, error } = await sb.from('entry_picks')
+        .select('team_id, position').eq('entry_id', state.entry.id).order('position');
+    if (error || !data?.length) { toast('Could not load your entry'); return; }
+
+    for (const { team_id } of data) {
+        const li = list.querySelector(`li[data-id="${team_id}"]`);
+        if (li) list.appendChild(li);
+    }
+    renumber();
+    toast('Loaded your saved entry');
+}
+
+async function onSave() {
+    if (state.saving) return;
+
+    const p = phase();
+    if (p === 'closed') { toast('Predictions are closed for this season'); return; }
+    if (p === 'late' && state.entry) { toast('Your entry is locked; this list is scratch space'); return; }
+    if (p === 'open' && state.entry) {
+        const ok = await confirmDialog({
+            title: 'Replace your saved prediction?',
+            body: 'Your previous saved order will be lost and replaced by what is on screen.',
+            confirmLabel: 'Replace',
+        });
+        if (!ok) return;
+    } else if (p === 'late') {
+        const mw = Math.max(state.ls.started_matchweek || 0, 1);
+        const ok = await confirmDialog({
+            title: 'Submit late entry?',
+            body: `The season has already started (matchweek ${mw}). A late entry is final: you will not be able to edit it, and it will show an MW ${mw} badge.`,
+            confirmLabel: 'Submit',
+        });
+        if (!ok) return;
+    }
+
+    const teamIds = [...list.children].map(li => li.dataset.id).filter(Boolean);
+    state.saving = true;
+    updateActions();
+    try {
+        const r = await fetch(`/api/entries/${LEAGUE}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${await getAccessToken()}` },
+            body: JSON.stringify({ teamIds }),
+        });
+        const body = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(body.error || `HTTP ${r.status}`);
+        toast(body.mode === 'late' ? `Late entry submitted (MW ${body.late_matchweek})` : 'Prediction saved');
+    } catch (e) {
+        const msgs = {
+            entry_locked: 'Your entry is locked and can no longer be changed',
+            season_closed: 'Predictions are closed for this season',
+            unauthorized: 'Please sign in again',
+        };
+        toast(msgs[e.message] || 'Could not save, try again');
+        console.error('save', e);
+    } finally {
+        state.saving = false;
+        await loadSeason();
+        await loadEntry();
+        updateActions();
+    }
+}
+
+let sortableReady = false;
 function render(teams) {
     list.innerHTML = teams.map((t, i) => `
     <li class="item" data-id="${esc(t.id)}">
@@ -89,7 +231,7 @@ function render(teams) {
     </li>
   `).join('');
     renumber();
-    enableSortable(list, renumber);
+    if (!sortableReady) { enableSortable(list, renumber); sortableReady = true; }
 }
 
 function renumber() {
@@ -120,21 +262,6 @@ function ensureFavicon(url) {
     // best guess type (many emblems are SVG)
     if (url.endsWith('.svg')) link.type = 'image/svg+xml';
     link.href = url;
-}
-
-// tiny toast
-function toast(msg) {
-    let el = document.getElementById('toast');
-    if (!el) {
-        el = document.createElement('div');
-        el.id = 'toast';
-        el.className = 'toast';
-        document.body.appendChild(el);
-    }
-    el.textContent = msg;
-    el.classList.add('show');
-    clearTimeout(toast._t);
-    toast._t = setTimeout(() => el.classList.remove('show'), 1200);
 }
 
 function esc(s) { return String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c])); }

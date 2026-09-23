@@ -43,6 +43,7 @@ app.get('/api/teams/:league', async (req, res) => {
   }
 });
 
+app.post('/api/entries/:league', require('../api/entries/[league]'));
 app.get('/api/cron/sync', require('../api/cron/sync'));
 
 const PORT =process.env.PORT || 3000;

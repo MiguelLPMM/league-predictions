@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const SHELL_CACHE = `predictions-shell-${CACHE_VERSION}`;
 const API_CACHE = `predictions-api-${CACHE_VERSION}`;
 
@@ -12,6 +12,11 @@ const SHELL_FILES = [
   '/ligaportugal.html',
   '/style.css',
   '/js/main.js',
+  '/js/shell.js',
+  '/js/auth.js',
+  '/js/notify.js',
+  '/js/supabaseClient.js',
+  '/vendor/supabase.js',
   '/manifest.webmanifest',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
