@@ -1,0 +1,39 @@
+<!doctype html><html lang="en"><head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Leaderboard · League Predictions</title>
+  <meta name="description" content="See how everyone's predicted league tables compare with the real standings.">
+  <link rel="icon" href="/icons/icon-32.png" id="favicon">
+  <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#1e40af">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="stylesheet" href="/style.css">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <script src="/vendor/supabase.js" defer></script>
+  <script type="module" src="/js/leaderboard.js"></script>
+</head><body>
+  <nav class="nav" id="nav"></nav>
+  <div class="header wide" id="header"></div>
+  <section class="section lb-section" id="section">
+    <div class="lb-tabs" id="lb-tabs" hidden>
+      <button class="view-tab" data-view="breakdown">Breakdown</button>
+      <button class="view-tab" data-view="table">Actual Table</button>
+      <button class="view-tab" data-view="live">Leaderboard</button>
+    </div>
+    <p class="lb-gate" id="lb-gate" hidden></p>
+    <div class="lb-view" id="lb-live" hidden></div>
+    <div class="lb-view" id="lb-table" hidden></div>
+    <div class="lb-view" id="lb-breakdown" hidden></div>
+  </section>
+  <dialog class="drilldown" id="drilldown">
+    <div class="drilldown-head">
+      <div class="lb-chip" id="drilldown-user"></div>
+      <button class="copy-btn" id="drilldown-close" aria-label="Close"><span class="material-icons">close</span></button>
+    </div>
+    <table class="drilldown-table">
+      <thead><tr><th></th><th></th><th>Team</th><th>Off</th></tr></thead>
+      <tbody id="drilldown-body"></tbody>
+    </table>
+  </dialog>
+</body></html>

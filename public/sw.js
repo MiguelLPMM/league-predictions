@@ -1,20 +1,19 @@
-const CACHE_VERSION = 'v2';
+const CACHE_VERSION = 'v4';
 const SHELL_CACHE = `predictions-shell-${CACHE_VERSION}`;
 const API_CACHE = `predictions-api-${CACHE_VERSION}`;
 
 const SHELL_FILES = [
   '/',
-  '/premierleague.html',
-  '/laliga.html',
-  '/bundesliga.html',
-  '/seriea.html',
-  '/ligue1.html',
-  '/ligaportugal.html',
+  '/predictions',
+  '/leaderboard',
   '/style.css',
   '/js/main.js',
   '/js/shell.js',
   '/js/auth.js',
   '/js/notify.js',
+  '/js/leaderboard.js',
+  '/js/scoring.js',
+  '/js/api/leaderboard.js',
   '/js/supabaseClient.js',
   '/vendor/supabase.js',
   '/manifest.webmanifest',
@@ -72,7 +71,8 @@ async function networkFirst(request) {
 
 async function staleWhileRevalidate(request) {
   const cache = await caches.open(SHELL_CACHE);
-  const cached = await cache.match(request);
+  // Pages are the same shell whatever the ?league= query, so match navigations without it
+  const cached = await cache.match(request, request.mode === 'navigate' ? { ignoreSearch: true } : undefined);
   const fetchPromise = fetch(request)
     .then((response) => {
       cache.put(request, response.clone());

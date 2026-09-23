@@ -18,11 +18,28 @@
   <meta name="twitter:title" content="League Predictions">
   <meta name="twitter:description" content="Drag and drop to build your predicted final standings for six major football leagues.">
   <meta name="twitter:image" content="https://league-predictions.vercel.app/og-image.png">
-  <!-- Meta refresh as primary redirect -->
-  <meta http-equiv="refresh" content="0; url=/premierleague.html">
-  <script>
-    // JS fallback (some crawlers/older browsers)
-    window.location.replace('/premierleague.html');
+  <script src="/vendor/supabase.js"></script>
+  <script type="module">
+    // Landing rule: Predictions if the current season of your last league
+    // hasn't kicked off yet, otherwise its Leaderboard. Any failure falls
+    // back to the predictions page.
+    import { supabaseClient as sb } from '/js/supabaseClient.js';
+    import { lastLeague } from '/js/shell.js';
+
+    const league = lastLeague();
+    let target = `/predictions?league=${league}`;
+    try {
+      const { data: season } = await sb.from('seasons').select('season_year').eq('is_current', true).maybeSingle();
+      const { data: ls } = season && await sb.from('league_seasons')
+        .select('status, reveal_unlocked, first_kickoff_at')
+        .eq('league', league).eq('season_year', season.season_year).maybeSingle();
+      const started = ls && (ls.reveal_unlocked || ls.status !== 'upcoming'
+        || (ls.first_kickoff_at && Date.parse(ls.first_kickoff_at) <= Date.now()));
+      if (started) target = `/leaderboard?league=${league}`;
+    } catch (e) {
+      console.error('landing', e);
+    }
+    location.replace(target);
   </script>
   <style>
     body{margin:0;font-family:system-ui,Arial,sans-serif;display:grid;place-items:center;height:100svh}
@@ -30,7 +47,7 @@
   </style>
 </head>
 <body>
-  <p>Redirecting to <a href="/premierleague.html">Premier League</a>…</p>
+  <p>Loading… <a href="/predictions?league=premierleague">Premier League</a></p>
   <noscript>
     <p>JavaScript is disabled. Click the link above.</p>
   </noscript>

@@ -12,11 +12,16 @@ app.get('/sw.js', (_req, res, next) => {
   next();
 });
 
-app.use(express.static(path.resolve(__dirname, '../public')));
+// Mirror Vercel's cleanUrls + the legacy per-league redirects, so dev matches production
+const LEAGUES = 'premierleague|laliga|bundesliga|seriea|ligue1|ligaportugal';
+const qs = (req) => (req.url.includes('?') ? req.url.slice(req.url.indexOf('?')) : '');
+app.get(new RegExp(`^/(${LEAGUES})(\\.html)?$`), (req, res) =>
+  res.redirect(`/predictions?league=${req.params[0]}`));
+app.get(/^\/(.+)\.html$/, (req, res) => res.redirect(`/${req.params[0]}${qs(req)}`));
+
+app.use(express.static(path.resolve(__dirname, '../public'), { extensions: ['html'] }));
 
 // ---------- Routes ----------
-app.get('/', (_req, res) => res.redirect('/premierleague.html'));
-
 app.get('/api/health', (_req, res) =>
   res.json({ ok: true, hasToken: Boolean(process.env.FD_TOKEN), season: currentSeason() })
 );

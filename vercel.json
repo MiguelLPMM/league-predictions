@@ -1,5 +1,18 @@
 {
   "outputDirectory": "public",
+  "cleanUrls": true,
+  "redirects": [
+    {
+      "source": "/:league(premierleague|laliga|bundesliga|seriea|ligue1|ligaportugal).html",
+      "destination": "/predictions?league=:league",
+      "permanent": false
+    },
+    {
+      "source": "/:league(premierleague|laliga|bundesliga|seriea|ligue1|ligaportugal)",
+      "destination": "/predictions?league=:league",
+      "permanent": false
+    }
+  ],
   "headers": [
     {
       "source": "/sw.js",

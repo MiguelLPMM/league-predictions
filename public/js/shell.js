@@ -1,5 +1,7 @@
 // Shared page shell: top bar (hamburger + league selector), hamburger sidebar
 // (page links + account) and a confirm dialog. Every page calls initShell() once.
+// page = 'predictions' | 'leaderboard': which page this is, so the league
+// selector keeps you on the same kind of page when you switch league.
 import { onUser, signInWithGoogle, signOut, userName, userAvatar } from './auth.js';
 import { showPendingToast } from './notify.js';
 
@@ -14,7 +16,23 @@ const LEAGUES = [
 
 const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
-export function initShell({ league }) {
+export const LEAGUE_SLUGS = LEAGUES.map(([slug]) => slug);
+
+export function rememberLeague(league) {
+    try { localStorage.setItem('league', league); } catch { /* storage unavailable */ }
+}
+
+export function lastLeague() {
+    try {
+        const stored = localStorage.getItem('league');
+        if (LEAGUE_SLUGS.includes(stored)) return stored;
+    } catch { /* storage unavailable */ }
+    return LEAGUE_SLUGS[0];
+}
+
+export function initShell({ league, page = 'predictions' }) {
+    rememberLeague(league);
+    const pageHref = (slug) => `/${page}?league=${slug}`;
     const bar = document.getElementById('nav');
     if (!bar) return;
 
@@ -24,7 +42,7 @@ export function initShell({ league }) {
         </button>
         <div class="nav-leagues">
             ${LEAGUES.map(([slug, label]) =>
-                `<a href="/${slug}.html" class="${slug === league ? 'active' : ''}">${label}</a>`).join('')}
+                `<a href="${pageHref(slug)}" class="${slug === league ? 'active' : ''}">${label}</a>`).join('')}
         </div>`;
 
     const overlay = document.createElement('div');
@@ -40,7 +58,8 @@ export function initShell({ league }) {
             <span class="material-icons">close</span>
         </button>
         <div class="sidebar-links">
-            <a href="/${league}.html" class="active">Predictions</a>
+            <a href="/predictions?league=${league}" class="${page === 'predictions' ? 'active' : ''}">Predictions</a>
+            <a href="/leaderboard?league=${league}" class="${page === 'leaderboard' ? 'active' : ''}">Leaderboard</a>
         </div>
         <div class="sidebar-account" id="sidebar-account"></div>`;
     document.body.append(overlay, sidebar);

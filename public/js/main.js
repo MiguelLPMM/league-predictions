@@ -1,10 +1,11 @@
-// set by each page: window.LEAGUE_PAGE = 'premierleague' | 'laliga' | ...
+// /predictions?league=premierleague | laliga | bundesliga | seriea | ligue1 | ligaportugal
 import { supabaseClient as sb } from './supabaseClient.js';
 import { onUser, getAccessToken } from './auth.js';
-import { initShell, confirmDialog } from './shell.js';
+import { initShell, confirmDialog, lastLeague, LEAGUE_SLUGS } from './shell.js';
 import { toast } from './notify.js';
 
-const LEAGUE = (window.LEAGUE_PAGE || 'premierleague').toLowerCase();
+const requested = new URLSearchParams(location.search).get('league');
+const LEAGUE = LEAGUE_SLUGS.includes(requested) ? requested : lastLeague();
 
 if ('serviceWorker' in navigator) {
     window.addEventListener('load', () => {

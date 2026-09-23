@@ -1,0 +1,268 @@
+// Leaderboard page: season selector plus the three views - per-user breakdown,
+// actual table (users scroll sideways) and the ranked leaderboard - and a
+// drill-down with one user's full predicted table. Scoring lives in scoring.js;
+// who can see what is enforced by RLS (entries stay hidden until the reveal).
+import { onUser } from './auth.js';
+import { initShell, lastLeague, LEAGUE_SLUGS } from './shell.js';
+import { computeOffsets, formatOff } from './scoring.js';
+import {
+    getLeague, getCurrentSeasonYear, listLeagueSeasons, getStandings,
+    getSeasonTeams, getEntries, getProfiles,
+} from './api/leaderboard.js';
+
+const params = new URLSearchParams(location.search);
+const requested = params.get('league');
+const LEAGUE = LEAGUE_SLUGS.includes(requested) ? requested : lastLeague();
+
+const VIEW_KEY = 'leaderboardView';
+const VIEWS = ['breakdown', 'table', 'live'];
+
+const $ = (id) => document.getElementById(id);
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+const state = {
+    user: null,
+    seasons: [],       // league_seasons rows, newest first
+    seasonYear: null,  // selected
+    data: null,        // loaded leaderboard for the selected season
+};
+
+initShell({ league: LEAGUE, page: 'leaderboard' });
+
+if ('serviceWorker' in navigator) {
+    window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(err => console.error('sw register', err));
+    });
+}
+
+/* -------- view switcher -------- */
+
+function selectedView() {
+    const fromUrl = params.get('view');
+    if (VIEWS.includes(fromUrl)) return fromUrl;
+    try {
+        const v = localStorage.getItem(VIEW_KEY);
+        if (VIEWS.includes(v)) return v;
+    } catch { /* storage unavailable */ }
+    return 'breakdown';
+}
+
+function setView(view) {
+    try { localStorage.setItem(VIEW_KEY, view); } catch { /* storage unavailable */ }
+    for (const v of VIEWS) $(`lb-${v}`).hidden = v !== view || !state.data;
+    document.querySelectorAll('.view-tab').forEach((tab) => tab.classList.toggle('active', tab.dataset.view === view));
+}
+
+function showGate(message) {
+    state.data = null;
+    $('lb-tabs').hidden = true;
+    for (const v of VIEWS) $(`lb-${v}`).hidden = true;
+    $('lb-gate').textContent = message;
+    $('lb-gate').hidden = false;
+}
+
+/* -------- loading -------- */
+
+async function init() {
+    const league = await getLeague(LEAGUE).catch(() => null);
+    renderHeader(league);
+
+    try {
+        state.seasons = await listLeagueSeasons(LEAGUE);
+    } catch (e) {
+        console.error('seasons', e);
+        showGate('Could not load the leaderboard, please try again later.');
+        return;
+    }
+
+    const wanted = Number(params.get('season'));
+    const current = await getCurrentSeasonYear().catch(() => null);
+    const years = state.seasons.map((s) => s.season_year);
+    state.seasonYear = years.includes(wanted) ? wanted : years.includes(current) ? current : years[0];
+    renderSeasonSelect();
+
+    document.querySelectorAll('.view-tab').forEach((tab) => tab.addEventListener('click', () => setView(tab.dataset.view)));
+
+    let previous; // undefined = not known yet, null = signed out
+    onUser((user) => {
+        const id = user ? user.id : null;
+        state.user = user;
+        if (previous === undefined) {
+            previous = id;
+            load();
+        } else if (id !== previous) {
+            previous = id;
+            load();
+        }
+    });
+}
+
+function renderHeader(league) {
+    if (league) document.title = `${league.name} Leaderboard`;
+    $('header').innerHTML = `
+        <div class="title">
+            ${league?.emblem ? `<img class="league-logo" src="${esc(league.emblem)}" alt="">` : ''}
+            <h1>${esc(league?.name || 'Leaderboard')}</h1>
+        </div>
+        <div class="actions"><select id="season-select" class="season-select" aria-label="Season" hidden></select></div>`;
+}
+
+function renderSeasonSelect() {
+    const select = $('season-select');
+    if (!select || !state.seasons.length) return;
+    select.innerHTML = state.seasons.map((s) =>
+        `<option value="${s.season_year}">${esc(s.seasons?.label || s.season_year)}</option>`).join('');
+    select.value = String(state.seasonYear);
+    select.hidden = false;
+    select.addEventListener('change', () => {
+        state.seasonYear = Number(select.value);
+        history.replaceState(null, '', `?league=${LEAGUE}&season=${state.seasonYear}`);
+        load();
+    });
+}
+
+async function load() {
+    const ls = state.seasons.find((s) => s.season_year === state.seasonYear);
+    $('lb-gate').hidden = true;
+    if (!ls) { showGate('No data recorded for this season.'); return; }
+
+    const revealed = ls.reveal_unlocked || ls.status === 'concluded'
+        || (ls.first_kickoff_at && Date.parse(ls.first_kickoff_at) <= Date.now());
+    if (!revealed) { showGate('The leaderboard unlocks once the first match kicks off.'); return; }
+
+    let standings, teams, entries;
+    try {
+        [standings, teams, entries] = await Promise.all([
+            getStandings(ls.id), getSeasonTeams(ls.id), getEntries(ls.id),
+        ]);
+    } catch (e) {
+        console.error('leaderboard', e);
+        showGate('Could not load the leaderboard, please try again later.');
+        return;
+    }
+    if (!standings.length) { showGate('No standings recorded yet for this season.'); return; }
+    if (!entries.length) { showGate('No one has a prediction recorded for this league yet.'); return; }
+
+    const profiles = await getProfiles([...new Set(entries.map((e) => e.user_id).filter(Boolean))]).catch(() => new Map());
+    const actualRank = new Map(standings.map((s) => [s.team_id, s.position]));
+
+    const results = entries.map((entry) => {
+        const picks = [...entry.entry_picks].sort((a, b) => a.position - b.position);
+        const predictedRank = new Map(picks.map((p) => [p.team_id, p.position]));
+        const profile = profiles.get(entry.user_id);
+        return {
+            entry,
+            name: profile?.display_name || 'Player',
+            avatar: profile?.avatar_url || '',
+            isSelf: Boolean(state.user && entry.user_id === state.user.id),
+            picks,
+            ...computeOffsets(predictedRank, standings),
+        };
+    });
+
+    state.data = { ls, standings, teams, actualRank, results };
+    $('lb-tabs').hidden = false;
+    renderAll();
+    setView(selectedView());
+}
+
+/* -------- rendering -------- */
+
+// Self first, then everyone else in submission order (already ordered by the
+// query). Favorites slot in between once that feature exists.
+function columnOrder(results) {
+    return [...results.filter((r) => r.isSelf), ...results.filter((r) => !r.isSelf)];
+}
+
+function chipHtml(r, { avatar }) {
+    const badge = r.entry.late_matchweek ? `<span class="lb-badge">MW ${r.entry.late_matchweek}</span>` : '';
+    const img = avatar && r.avatar ? `<img src="${esc(r.avatar)}" alt="" referrerpolicy="no-referrer">` : '';
+    return `<span class="lb-chip" tabindex="0" data-entry="${r.entry.id}">${img}<span class="lb-name">${esc(r.name)}</span>${badge}</span>`;
+}
+
+const crestHtml = (team) => (team?.crest ? `<img src="${esc(team.crest)}" alt="" loading="lazy">` : '');
+const offHtml = (off) => (off == null ? '—' : off === 0 ? `<b class="bang">0</b>` : formatOff(off));
+
+function renderAll() {
+    const { results } = state.data;
+    const ranked = [...results].sort((a, b) => (a.total - b.total) || (b.bangOn - a.bangOn));
+    const cols = columnOrder(results);
+    renderLive(ranked);
+    renderTable(cols);
+    renderBreakdown(cols);
+    document.querySelectorAll('.lb-chip').forEach((chip) => {
+        const open = () => openDrilldown(chip.dataset.entry);
+        chip.addEventListener('click', open);
+        chip.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+    });
+}
+
+function renderLive(ranked) {
+    $('lb-live').innerHTML = ranked.map((r, i) => `
+        <div class="lb-row${r.isSelf ? ' self' : ''}">
+            <span class="lb-rank">${i + 1}</span>
+            ${chipHtml(r, { avatar: true })}
+            <span class="lb-score">${r.total}</span>
+            <span class="lb-bangon">${r.bangOn} bang on</span>
+        </div>`).join('');
+}
+
+// Rows = the real table; one column per user showing how far off they were.
+function renderTable(cols) {
+    const { standings, teams } = state.data;
+    $('lb-table').innerHTML = `
+        <table class="lb-grid lb-table-view">
+            <thead><tr><th class="frozen"></th>${cols.map((r) => `<th class="user">${chipHtml(r, { avatar: false })}</th>`).join('')}</tr></thead>
+            <tbody>${standings.map((row) => {
+                const team = teams.get(row.team_id);
+                return `<tr>
+                    <td class="frozen"><span class="frozen-inner"><span class="frozen-rank">${row.position}</span>${crestHtml(team)}<span class="frozen-name">${esc(team?.name)}</span></span></td>
+                    ${cols.map((r) => `<td class="user">${offHtml(r.offsetByTeamId.get(row.team_id))}</td>`).join('')}
+                </tr>`;
+            }).join('')}</tbody>
+        </table>`;
+}
+
+// Rows = each user's own predicted slots 1..N (not the real order); a closing
+// Total row shows each user's score and bang-on count.
+function renderBreakdown(cols) {
+    const { teams, actualRank } = state.data;
+    const slots = Math.max(...cols.map((r) => r.picks.length));
+    let body = '';
+    for (let pos = 1; pos <= slots; pos++) {
+        body += `<tr><td class="frozen">${pos}</td>${cols.map((r) => {
+            const pick = r.picks[pos - 1];
+            if (!pick) return '<td class="user">—</td>';
+            const team = teams.get(pick.team_id);
+            const actual = actualRank.get(pick.team_id);
+            return `<td class="user"><div class="bd-inner"><span class="bd-team">${crestHtml(team)}<span>${esc(team?.name)}</span></span><span class="bd-off">${offHtml(actual == null ? null : pos - actual)}</span></div></td>`;
+        }).join('')}</tr>`;
+    }
+    $('lb-breakdown').innerHTML = `
+        <table class="lb-grid lb-breakdown-view">
+            <thead><tr><th class="frozen"></th>${cols.map((r) => `<th class="user">${chipHtml(r, { avatar: false })}</th>`).join('')}</tr></thead>
+            <tbody>${body}
+                <tr class="total"><td class="frozen">Total</td>${cols.map((r) => `<td class="user">${r.total} · ${r.bangOn} bang on</td>`).join('')}</tr>
+            </tbody>
+        </table>`;
+}
+
+/* -------- drill-down -------- */
+
+function openDrilldown(entryId) {
+    const r = state.data.results.find((x) => x.entry.id === entryId);
+    if (!r) return;
+    const { teams, actualRank } = state.data;
+    $('drilldown-user').innerHTML = `${r.avatar ? `<img src="${esc(r.avatar)}" alt="" referrerpolicy="no-referrer">` : ''}<span class="lb-name">${esc(r.name)}</span>${r.entry.late_matchweek ? `<span class="lb-badge">MW ${r.entry.late_matchweek}</span>` : ''}`;
+    $('drilldown-body').innerHTML = r.picks.map((p) => {
+        const team = teams.get(p.team_id);
+        const actual = actualRank.get(p.team_id);
+        return `<tr><td>${p.position}</td><td>${crestHtml(team)}</td><td class="left">${esc(team?.name)}</td><td>${offHtml(actual == null ? null : p.position - actual)}</td></tr>`;
+    }).join('');
+    $('drilldown').showModal();
+}
+
+$('drilldown-close').addEventListener('click', () => $('drilldown').close());
+$('drilldown').addEventListener('click', (e) => { if (e.target === $('drilldown')) $('drilldown').close(); });
+
+init();

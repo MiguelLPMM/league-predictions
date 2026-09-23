@@ -2,7 +2,7 @@
   "name": "League Predictions",
   "short_name": "Predictions",
   "description": "Drag and drop to build your predicted final standings for the Premier League, La Liga, Bundesliga, Serie A, Ligue 1 and Liga Portugal.",
-  "start_url": "/premierleague.html",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#ffffff",
