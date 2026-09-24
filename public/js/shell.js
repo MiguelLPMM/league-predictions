@@ -26,7 +26,7 @@ export function lastLeague() {
 
 export function initShell({ league, page = 'predictions' }) {
     rememberLeague(league);
-    const pageHref = (slug) => `/${page}?league=${slug}`;
+    const pageHref = (slug) => `/${page === 'profile' ? 'predictions' : page}?league=${slug}`;
     const bar = document.getElementById('nav');
     if (!bar) return;
 
@@ -36,7 +36,7 @@ export function initShell({ league, page = 'predictions' }) {
         </button>
         <div class="nav-leagues">
             ${LEAGUES.map(([slug, label]) =>
-                `<a href="${pageHref(slug)}" class="${slug === league ? 'active' : ''}">${label}</a>`).join('')}
+                `<a href="${pageHref(slug)}" class="${slug === league && page !== 'profile' ? 'active' : ''}">${label}</a>`).join('')}
         </div>`;
 
     const overlay = document.createElement('div');
@@ -79,10 +79,10 @@ export function initShell({ league, page = 'predictions' }) {
             const avatar = userAvatar(user);
             account.innerHTML = `
                 <div class="sidebar-user">
-                    <div class="sidebar-user-row">
+                    <a class="sidebar-user-row" href="/profile" title="Your profile">
                         ${avatar ? `<img src="${esc(avatar)}" alt="" referrerpolicy="no-referrer">` : ''}
                         <span>${esc(userName(user))}</span>
-                    </div>
+                    </a>
                     <button class="sidebar-account-btn" id="sidebar-signout">
                         <span class="material-icons">logout</span> Sign out
                     </button>

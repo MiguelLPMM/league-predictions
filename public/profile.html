@@ -1,0 +1,32 @@
+<!doctype html><html lang="en"><head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Profile · League Predictions</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="/icons/icon-32.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#1e40af">
+  <link rel="stylesheet" href="/style.css">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <script src="/vendor/supabase.js" defer></script>
+  <script type="module" src="/js/profile.js"></script>
+</head><body>
+  <nav class="nav" id="nav"></nav>
+  <div class="header wide" id="header"><div class="title"><h1>Profile</h1></div></div>
+  <section class="section admin-section" id="section">
+    <p class="lb-gate" id="profile-gate">Sign in from the menu to see your profile.</p>
+    <div id="profile-content" hidden>
+
+      <div class="admin-card">
+        <h2>Your account</h2>
+        <div class="profile-account" id="profile-account"></div>
+      </div>
+
+      <div class="admin-card">
+        <h2>Historical predictions</h2>
+        <p class="hint">If one of the entries imported from before this app existed is actually yours, tell us here and the admin will confirm it and link it to your account.</p>
+        <div id="claim-area"></div>
+      </div>
+
+    </div>
+  </section>
+</body></html>

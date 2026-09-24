@@ -98,7 +98,8 @@ body {
 .sidebar-account-btn:hover { background: #eef1fb; }
 
 .sidebar-user { display: flex; flex-direction: column; gap: .6em; }
-.sidebar-user-row { display: flex; align-items: center; gap: .6em; padding: .3em .2em; min-width: 0; }
+.sidebar-user-row { display: flex; align-items: center; gap: .6em; padding: .4em .5em; min-width: 0; border-radius: 10px; color: inherit; text-decoration: none; }
+.sidebar-user-row:hover { background: #f5f6fb; }
 .sidebar-user-row img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; }
 .sidebar-user-row span { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 
@@ -373,3 +374,20 @@ dialog.claim-dialog { width: min(92vw, 460px); }
 }
 .claim-option:hover { background: #eef1fb; border-color: #1e40af; }
 .claim-option span { font-size: .82rem; color: #6b7280; }
+
+/* favorites */
+.fav-star { background: none; border: 0; padding: 0; margin-left: .15em; cursor: pointer; display: inline-flex; align-items: center; color: #9ca3af; flex-shrink: 0; }
+.fav-star:hover { color: #f5b301; }
+.fav-star.active { color: #f5b301; }
+.fav-star .material-icons { font-size: 1.15em; }
+
+/* profile */
+.profile-account { display: flex; align-items: center; gap: 12px; }
+.profile-account img { width: 48px; height: 48px; border-radius: 50%; object-fit: cover; }
+
+/* privacy / terms (reachable only by link) */
+.doc { max-width: 720px; margin: 0 auto; padding: 24px 16px 48px; line-height: 1.55; color: #1f2937; }
+.doc h1 { font-size: 1.6rem; margin: 0 0 4px; }
+.doc h2 { font-size: 1.1rem; margin: 26px 0 6px; }
+.doc p, .doc li { margin: 0 0 10px; }
+.doc .updated { color: #6b7280; font-size: .9rem; margin-bottom: 18px; }

@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v6';
+const CACHE_VERSION = 'v7';
 const SHELL_CACHE = `predictions-shell-${CACHE_VERSION}`;
 const API_CACHE = `predictions-api-${CACHE_VERSION}`;
 
@@ -7,6 +7,7 @@ const SHELL_FILES = [
   '/predictions',
   '/leaderboard',
   '/admin',
+  '/profile',
   '/style.css',
   '/js/main.js',
   '/js/shell.js',
@@ -18,6 +19,8 @@ const SHELL_FILES = [
   '/js/adminConfig.js',
   '/js/teamMatch.js',
   '/js/leagues.js',
+  '/js/profile.js',
+  '/js/api/favorites.js',
   '/js/guestClaimPrompt.js',
   '/js/api/guestClaims.js',
   '/js/api/leaderboard.js',

@@ -5,6 +5,7 @@
 import { onUser } from './auth.js';
 import { initShell, lastLeague, LEAGUE_SLUGS } from './shell.js';
 import { computeOffsets, formatOff } from './scoring.js';
+import { getFavorites, addFavoriteUser, removeFavoriteUser, addFavoriteGuest, removeFavoriteGuest } from './api/favorites.js';
 import {
     getLeague, getCurrentSeasonYear, listLeagueSeasons, getStandings,
     getSeasonTeams, getEntries, getProfiles,
@@ -14,6 +15,7 @@ const params = new URLSearchParams(location.search);
 const requested = params.get('league');
 const LEAGUE = LEAGUE_SLUGS.includes(requested) ? requested : lastLeague();
 
+let currentView = null; // the view on screen (a re-render must not fall back to ?view=)
 const VIEW_KEY = 'leaderboardView';
 const VIEWS = ['breakdown', 'table', 'live'];
 
@@ -25,6 +27,8 @@ const state = {
     seasons: [],       // league_seasons rows, newest first
     seasonYear: null,  // selected
     data: null,        // loaded leaderboard for the selected season
+    favUsers: new Set(),   // favorited accounts (signed-in only)
+    favGuests: new Set(),  // favorited guest keys
 };
 
 initShell({ league: LEAGUE, page: 'leaderboard' });
@@ -48,6 +52,7 @@ function selectedView() {
 }
 
 function setView(view) {
+    currentView = view;
     try { localStorage.setItem(VIEW_KEY, view); } catch { /* storage unavailable */ }
     for (const v of VIEWS) $(`lb-${v}`).hidden = v !== view || !state.data;
     document.querySelectorAll('.view-tab').forEach((tab) => tab.classList.toggle('active', tab.dataset.view === view));
@@ -145,6 +150,13 @@ async function load() {
 
     const profiles = await getProfiles([...new Set(entries.map((e) => e.user_id).filter(Boolean))]).catch(() => new Map());
     const actualRank = new Map(standings.map((s) => [s.team_id, s.position]));
+    try {
+        const favs = await getFavorites(state.user?.id);
+        state.favUsers = favs.userIds;
+        state.favGuests = favs.guestKeys;
+    } catch (e) {
+        console.error('favorites', e);
+    }
 
     const results = entries.map((entry) => {
         const picks = [...entry.entry_picks].sort((a, b) => a.position - b.position);
@@ -164,21 +176,29 @@ async function load() {
     state.data = { ls, standings, teams, actualRank, results };
     $('lb-tabs').hidden = false;
     renderAll();
-    setView(selectedView());
+    setView(currentView || selectedView());
 }
 
 /* -------- rendering -------- */
 
-// Self first, then everyone else in submission order (already ordered by the
-// query). Favorites slot in between once that feature exists.
+const isFavorite = (r) => (r.entry.user_id ? state.favUsers.has(r.entry.user_id) : state.favGuests.has(r.entry.guest_key));
+
+// You first, then your favorites, then everyone else. Each group stays in
+// submission order (the query already returns entries that way).
 function columnOrder(results) {
-    return [...results.filter((r) => r.isSelf), ...results.filter((r) => !r.isSelf)];
+    const others = results.filter((r) => !r.isSelf);
+    return [...results.filter((r) => r.isSelf), ...others.filter(isFavorite), ...others.filter((r) => !isFavorite(r))];
 }
 
 function chipHtml(r, { avatar }) {
     const badge = r.entry.late_gameweek ? `<span class="lb-badge">GW ${r.entry.late_gameweek}</span>` : '';
     const img = avatar && r.avatar ? `<img src="${esc(r.avatar)}" alt="" referrerpolicy="no-referrer">` : '';
-    return `<span class="lb-chip" tabindex="0" data-entry="${r.entry.id}">${img}<span class="lb-name">${esc(r.name)}</span>${badge}</span>`;
+    // favoriting needs an account, and you never favorite yourself
+    const fav = isFavorite(r);
+    const star = state.user && !r.isSelf
+        ? `<button class="fav-star${fav ? ' active' : ''}" data-fav-entry="${r.entry.id}" aria-label="${fav ? 'Remove favorite' : 'Add favorite'}"><span class="material-icons">${fav ? 'star' : 'star_border'}</span></button>`
+        : '';
+    return `<span class="lb-chip" tabindex="0" data-entry="${r.entry.id}">${img}<span class="lb-name">${esc(r.name)}</span>${badge}${star}</span>`;
 }
 
 const crestHtml = (team) => (team?.crest ? `<img src="${esc(team.crest)}" alt="" loading="lazy">` : '');
@@ -194,8 +214,35 @@ function renderAll() {
     document.querySelectorAll('.lb-chip').forEach((chip) => {
         const open = () => openDrilldown(chip.dataset.entry);
         chip.addEventListener('click', open);
-        chip.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); open(); } });
+        chip.addEventListener('keydown', (e) => { if (e.target === chip && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); open(); } });
     });
+    document.querySelectorAll('.fav-star').forEach((btn) => btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        toggleFavorite(btn.dataset.favEntry);
+    }));
+}
+
+async function toggleFavorite(entryId) {
+    const r = state.data.results.find((x) => x.entry.id === entryId);
+    if (!r || !state.user) return;
+    const add = !isFavorite(r);
+    try {
+        if (r.entry.user_id) {
+            if (add) { await addFavoriteUser(state.user.id, r.entry.user_id); state.favUsers.add(r.entry.user_id); }
+            else { await removeFavoriteUser(state.user.id, r.entry.user_id); state.favUsers.delete(r.entry.user_id); }
+        } else if (add) {
+            await addFavoriteGuest(state.user.id, r.entry.guest_key);
+            state.favGuests.add(r.entry.guest_key);
+        } else {
+            await removeFavoriteGuest(state.user.id, r.entry.guest_key);
+            state.favGuests.delete(r.entry.guest_key);
+        }
+    } catch (e) {
+        console.error('favorite', e);
+        return;
+    }
+    renderAll();
+    setView(currentView || selectedView());
 }
 
 function renderLive(ranked) {
