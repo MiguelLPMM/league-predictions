@@ -73,7 +73,7 @@ export const AMBIGUITY_MARGIN = 0.05;
 
 // names: typed names in table order. candidates: [{id, name, ...}].
 // Returns one entry per name:
-//   { input, match, score, ambiguous, options }
+//   { input, match, score, ambiguous, duplicate, options }
 // match is null when there is no good match OR when the name fits more than one team
 // (ambiguous = true): those are left for a manual choice, never guessed. A single exact
 // name match is decisive even if other teams also fit loosely. Each candidate is
@@ -84,9 +84,17 @@ export function matchTeams(names, candidates) {
         .map((c) => ({ c, score: similarity(input, c.name) }))
         .sort((x, y) => y.score - x.score));
 
+    // A name typed twice can't be resolved by guessing which row is which team, so every
+    // row carrying it is left open (duplicate = true) for a manual choice.
+    const key = (n) => normalize(n).join(' ');
+    const counts = new Map();
+    names.forEach((n) => counts.set(key(n), (counts.get(key(n)) || 0) + 1));
+    const duplicateAt = new Set(names.map((n, i) => (counts.get(key(n)) > 1 ? i : -1)).filter((i) => i >= 0));
+
     const ambiguousAt = new Set();
     const pairs = [];
     scored.forEach((list, i) => {
+        if (duplicateAt.has(i)) return;
         const top = list[0];
         if (!top || top.score < MATCH_THRESHOLD) return;
         const rivals = list.slice(1).filter((o) => o.score >= MATCH_THRESHOLD && o.score >= top.score - AMBIGUITY_MARGIN);
@@ -110,8 +118,35 @@ export function matchTeams(names, candidates) {
             input,
             match: pick?.c ?? null,
             score: pick?.score ?? 0,
-            ambiguous: ambiguousAt.has(i),
+            ambiguous: ambiguousAt.has(i) || duplicateAt.has(i),
+            duplicate: duplicateAt.has(i),
             options: scored[i].map((o) => o.c),
         };
     });
+}
+
+// When the only open rows are one name typed several times ("Nantes" twice), the teams left
+// over after everything else matched are the candidates. Suggest which row is which team by
+// last season's final order: the earlier row gets the team that finished higher. A team with
+// no rank last season (promoted) counts as having finished below every ranked team; two
+// promoted teams can't be told apart, so then nothing is suggested. This is only a pre-fill
+// for the manual choice, never applied silently.
+//   previousPositions: Map(team_id -> position last season), or null.
+// Returns Map(row index -> candidate) (empty when there is nothing safe to suggest).
+export function proposeForDuplicates(matches, teams, previousPositions) {
+    const none = new Map();
+    const open = matches.map((m, i) => ({ m, i })).filter(({ m }) => !m.match);
+    if (!open.length || !previousPositions || !open.every(({ m }) => m.duplicate)) return none;
+
+    const key = (n) => normalize(n).join(' ');
+    if (!open.every(({ m }) => key(m.input) === key(open[0].m.input))) return none; // one duplicated name only
+
+    const used = new Set(matches.filter((m) => m.match).map((m) => m.match.id));
+    const leftover = teams.filter((t) => !used.has(t.id));
+    if (leftover.length !== open.length) return none;
+
+    const rank = (t) => (previousPositions.has(t.id) ? previousPositions.get(t.id) : Infinity);
+    const ordered = [...leftover].sort((a, b) => (rank(a) === rank(b) ? 0 : rank(a) < rank(b) ? -1 : 1));
+    if (ordered.some((t, k) => k > 0 && rank(t) === rank(ordered[k - 1]))) return none; // e.g. two promoted teams
+    return new Map(open.map(({ i }, k) => [i, ordered[k]]));
 }

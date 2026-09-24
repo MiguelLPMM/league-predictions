@@ -8,7 +8,7 @@ import { onUser, getAccessToken } from './auth.js';
 import { initShell, confirmDialog, lastLeague, LEAGUE_SLUGS, setNavSeason } from './shell.js';
 import { toast } from './notify.js';
 import { isAdminUser } from './adminConfig.js';
-import { matchTeams } from './teamMatch.js';
+import { matchTeams, proposeForDuplicates } from './teamMatch.js';
 import { seasonLabel } from './leagues.js';
 import { listUnclaimedGuestIdentities } from './api/guestClaims.js';
 import { describeSeasons } from './guestClaimPrompt.js';
@@ -108,6 +108,15 @@ function flagRows(tbody) {
         tr.classList.toggle('is-new', isOpen(chosen[i]));
         tr.classList.toggle('is-dup', !isOpen(chosen[i]) && counts.get(chosen[i]) > 1);
     });
+}
+
+// Why a row needs a decision, shown under the typed name.
+function rowNote(m) {
+    const notes = [];
+    if (m.duplicate) notes.push('typed twice');
+    else if (m.ambiguous) notes.push('fits several teams');
+    if (m.suggestion) notes.push("suggested from last season's order, check it");
+    return notes.length ? `<br><span class="hint-inline">${notes.join(' · ')}</span>` : '';
 }
 
 function typedNames(textareaId) {
@@ -231,7 +240,7 @@ function renderTableRows() {
     $('match-rows').innerHTML = open.map(({ m, i }) => `
         <tr data-i="${i}">
             <td>${i + 1}</td>
-            <td>${esc(m.input)}${m.ambiguous ? '<br><span class="hint-inline">fits several teams</span>' : ''}</td>
+            <td>${esc(m.input)}${rowNote(m)}</td>
             <td><select data-i="${i}">
                 ${m.ambiguous ? '<option value="" selected>— choose a team —</option>' : ''}
                 <option value="${NEW}"${m.ambiguous ? '' : ' selected'}>＋ New team: ${esc(m.input)}</option>
@@ -368,8 +377,20 @@ async function startImport() {
         await submitImport(form, state.importMatches.map((m) => m.match.id), eliminated);
         return;
     }
+    // a name typed twice is never assumed; at most the dropdowns come pre-filled from last season's order
+    const suggestions = proposeForDuplicates(state.importMatches, state.importTeams, await previousSeasonPositions());
+    suggestions.forEach((team, i) => { state.importMatches[i].suggestion = team; });
     renderImportRows();
     $('import-result').hidden = false;
+}
+
+// Last season's final position of every team in this league (Map team_id -> position), or null.
+async function previousSeasonPositions() {
+    const current = state.importSeasons.find((s) => s.id === $('import-season').value);
+    const previous = current && state.importSeasons.find((s) => s.season_year === current.season_year - 1);
+    if (!previous) return null;
+    const { data } = await sb.from('standings').select('team_id, position').eq('league_season_id', previous.id);
+    return data?.length ? new Map(data.map((r) => [r.team_id, r.position])) : null;
 }
 
 // Only the rows that did not match; their dropdowns exclude teams already matched.
@@ -381,10 +402,10 @@ function renderImportRows() {
     $('import-rows').innerHTML = open.map(({ m, i }) => `
         <tr data-i="${i}">
             <td>${i + 1}</td>
-            <td>${esc(m.input)}${m.ambiguous ? '<br><span class="hint-inline">fits several teams</span>' : ''}</td>
+            <td>${esc(m.input)}${rowNote(m)}</td>
             <td><select data-i="${i}">
-                <option value="" selected>— choose a team —</option>
-                ${m.options.filter((c) => !taken.has(c.id)).map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join('')}
+                <option value=""${m.suggestion ? '' : ' selected'}>— choose a team —</option>
+                ${m.options.filter((c) => !taken.has(c.id)).map((c) => `<option value="${c.id}"${m.suggestion?.id === c.id ? ' selected' : ''}>${esc(c.name)}</option>`).join('')}
             </select></td>
         </tr>`).join('');
     $('import-rows').querySelectorAll('select').forEach((sel) => sel.addEventListener('change', flagImportRows));
