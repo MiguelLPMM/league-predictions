@@ -14,6 +14,17 @@ import {
     getSeasonTeams, getEntries, getProfiles,
 } from './api/leaderboard.js';
 
+// The page is exactly as tall as the visible screen. In the installed app 100dvh can be taller than
+// what is visible (system bars), which hid the bottom of the table until something resized the
+// window, so measure the real height and follow every change of it.
+const fitScreen = () => document.documentElement.style.setProperty('--app-h', window.innerHeight + 'px');
+fitScreen();
+window.addEventListener('resize', fitScreen);
+window.addEventListener('orientationchange', () => setTimeout(fitScreen, 200));
+window.visualViewport?.addEventListener('resize', fitScreen);
+window.addEventListener('load', () => { fitScreen(); setTimeout(fitScreen, 300); });
+window.addEventListener('pageshow', fitScreen);
+
 const params = new URLSearchParams(location.search);
 const requested = params.get('league');
 const LEAGUE = LEAGUE_SLUGS.includes(requested) ? requested : lastLeague();
