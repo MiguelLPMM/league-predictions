@@ -115,8 +115,11 @@ body {
 }
 
 /* top bar: hamburger, brand, league selector */
+:root { --nav-h: 53px; } /* top bar height: the predictions header sticks right under it */
+
 .nav {
   display: flex;
+  height: var(--nav-h);
   gap: 12px;
   align-items: center;
   padding: 8px 16px;
@@ -268,10 +271,13 @@ body {
   border: 0;
   padding: 0;
   user-select: none;
-  touch-action: none;
 }
 
+/* Only the team box is a drag handle. Touching the number column scrolls the page instead. */
+.item .card { touch-action: none; cursor: grab; }
+
 .pos {
+  touch-action: pan-y;
   width: 2.5ch;
   text-align: right;
   font-variant-numeric: tabular-nums;
@@ -365,18 +371,33 @@ dialog.confirm p { margin: 0 0 16px; color: var(--text-2); line-height: 1.4; }
 }
 .header .season-select[hidden] { display: none; }
 
-.lb-tabs { display: flex; gap: 8px; margin: 4px 0 14px; }
+/* four equal buttons, each a quarter of the row (capped on wide screens) */
+.lb-tabs { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; max-width: 520px; margin: 2px 0 10px; flex: 0 0 auto; }
 .lb-tabs[hidden], .lb-gate[hidden], .lb-view[hidden] { display: none; }
 .view-tab {
-  font: inherit; cursor: pointer; padding: 7px 14px; border-radius: 10px;
+  font: inherit; font-size: clamp(.6rem, 3.1vw, .85rem); cursor: pointer; padding: 5px 4px; border-radius: 9px;
+  min-width: 0; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   border: 1px solid var(--border); background: var(--panel); color: var(--text);
 }
-.view-tab:hover { background: var(--panel-hover); }
+.view-tab:hover:not(:disabled) { background: var(--panel-hover); }
+.view-tab:disabled { opacity: .5; cursor: not-allowed; }
 .view-tab.active { background: var(--accent-tint); border-color: var(--accent-text); color: var(--accent-text); font-weight: 600; }
 
 .lb-gate { text-align: center; color: var(--muted); margin: 40px 0; }
 
-.lb-view { overflow: auto; -webkit-overflow-scrolling: touch; max-height: calc(100vh - 170px); }
+.lb-view { overflow: auto; -webkit-overflow-scrolling: touch; overscroll-behavior: contain; scrollbar-width: none; }
+.lb-view::-webkit-scrollbar { display: none; }
+
+/* Leaderboard page: the page itself never scrolls. Top bar, title and view buttons stay put,
+   and the table fills the rest of the screen and scrolls inside (its header row, first
+   column and Total row are sticky within it). */
+body.lb-page { height: 100vh; height: 100dvh; display: flex; flex-direction: column; overflow: hidden; }
+body.lb-page .nav { position: static; flex: 0 0 auto; }
+body.lb-page .header.wide { flex: 0 0 auto; margin: 8px 0; }
+body.lb-page .lb-section { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; margin: 0; padding-bottom: 12px; }
+body.lb-page .lb-view { flex: 1 1 auto; min-height: 0; }
+body.lb-page .lb-gate { flex: 0 0 auto; }
+
 
 /* who: avatar, name, late badge (shared by every view) */
 .lb-chip { display: inline-flex; align-items: center; gap: .4em; cursor: pointer; min-width: 0; }
@@ -537,3 +558,10 @@ select option { background: var(--surface); color: var(--text); }
 
 /* crests: a faint light outline keeps dark badges readable on the dark theme */
 .badge, .frozen-inner img, .bd-team img, .drilldown-table img, .crest-preview { filter: var(--crest-filter); }
+
+/* Predictions page: the league title and its buttons stay visible while the list scrolls */
+body.pred-page .header {
+  position: sticky; top: var(--nav-h); z-index: 9;
+  background: var(--bg); margin: 0 auto; padding: 12px 16px;
+  border-bottom: 1px solid var(--divider);
+}

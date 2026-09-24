@@ -321,6 +321,9 @@ function enableSortable(listEl, onChange) {
     }
 
     listEl.addEventListener('pointerdown', e => {
+        // only the team box starts a drag: pressing the number (or the gap) must leave the
+        // browser free to scroll, and must never move a team
+        if (!e.target.closest('.card')) return;
         const li = e.target.closest('li'); if (!li) return;
         e.preventDefault();
         target = li; startX = e.clientX; startY = e.clientY;

@@ -13,7 +13,7 @@
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
   <script src="/vendor/supabase.js" defer></script>
   <script type="module" src="/js/leaderboard.js"></script>
-</head><body>
+</head><body class="lb-page">
   <nav class="nav" id="nav"></nav>
   <div class="header wide" id="header"></div>
   <section class="section lb-section" id="section">
@@ -21,6 +21,7 @@
       <button class="view-tab" data-view="breakdown">Breakdown</button>
       <button class="view-tab" data-view="table">Actual Table</button>
       <button class="view-tab" data-view="live">Leaderboard</button>
+      <button class="view-tab" data-view="history" disabled title="Coming soon">History</button>
     </div>
     <p class="lb-gate" id="lb-gate" hidden></p>
     <div class="lb-view" id="lb-live" hidden></div>
