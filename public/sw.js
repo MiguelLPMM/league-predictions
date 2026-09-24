@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v7';
+const CACHE_VERSION = 'v8';
 const SHELL_CACHE = `predictions-shell-${CACHE_VERSION}`;
 const API_CACHE = `predictions-api-${CACHE_VERSION}`;
 
@@ -11,6 +11,7 @@ const SHELL_FILES = [
   '/style.css',
   '/js/main.js',
   '/js/shell.js',
+  '/js/theme.js',
   '/js/auth.js',
   '/js/notify.js',
   '/js/leaderboard.js',

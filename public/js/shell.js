@@ -7,6 +7,7 @@ import { showPendingToast } from './notify.js';
 import { isAdminUser } from './adminConfig.js';
 import { LEAGUES, LEAGUE_SLUGS } from './leagues.js';
 import { maybeShowGuestClaimPrompt } from './guestClaimPrompt.js';
+import { getTheme, setTheme } from './theme.js';
 
 export { LEAGUE_SLUGS };
 
@@ -37,7 +38,8 @@ export function initShell({ league, page = 'predictions' }) {
         <div class="nav-leagues">
             ${LEAGUES.map(([slug, label]) =>
                 `<a href="${pageHref(slug)}" class="${slug === league && page !== 'profile' ? 'active' : ''}">${label}</a>`).join('')}
-        </div>`;
+        </div>
+        <div class="theme-switch" id="theme-switch"></div>`;
 
     const overlay = document.createElement('div');
     overlay.className = 'sidebar-overlay';
@@ -71,6 +73,8 @@ export function initShell({ league, page = 'predictions' }) {
     overlay.addEventListener('click', () => setOpen(false));
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setOpen(false); });
 
+    renderThemeSwitch();
+
     onUser((user) => {
         document.getElementById('nav-admin').hidden = !isAdminUser(user);
         maybeShowGuestClaimPrompt(user);
@@ -98,6 +102,23 @@ export function initShell({ league, page = 'predictions' }) {
     });
 
     showPendingToast();
+}
+
+// System / Light / Dark as three icon buttons in the top bar. System (the default)
+// follows the device setting.
+function renderThemeSwitch() {
+    const box = document.getElementById('theme-switch');
+    const options = [['system', 'brightness_auto', 'Match system'], ['light', 'light_mode', 'Light'], ['dark', 'dark_mode', 'Dark']];
+    const draw = () => {
+        const current = getTheme();
+        box.innerHTML = `<div class="seg" role="group" aria-label="Appearance">${options.map(([value, icon, label]) =>
+            `<button data-theme-choice="${value}" class="${value === current ? 'active' : ''}" aria-pressed="${value === current}" aria-label="${label}" title="${label}"><span class="material-icons">${icon}</span></button>`).join('')}</div>`;
+        box.querySelectorAll('button').forEach((btn) => btn.addEventListener('click', () => {
+            setTheme(btn.dataset.themeChoice);
+            draw();
+        }));
+    };
+    draw();
 }
 
 // Promise-based confirm built on <dialog>. Resolves true when confirmed.
