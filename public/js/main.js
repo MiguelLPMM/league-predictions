@@ -20,7 +20,7 @@ const header = document.getElementById('header');
 const state = {
     user: null,
     teams: [],       // default (API) order, used by reset
-    ls: null,        // current league_season row (status, kickoff, matchweek)
+    ls: null,        // current league_season row (status, kickoff, gameweek)
     entry: null,     // the signed-in user's saved entry for this league season
     saving: false,
 };
@@ -103,7 +103,7 @@ async function loadSeason() {
         const { data: season } = await sb.from('seasons').select('season_year').eq('is_current', true).maybeSingle();
         if (!season) return;
         const { data } = await sb.from('league_seasons')
-            .select('id, status, first_kickoff_at, started_matchweek, is_manual')
+            .select('id, status, first_kickoff_at, started_gameweek, is_manual')
             .eq('league', LEAGUE).eq('season_year', season.season_year).maybeSingle();
         state.ls = data;
     } catch (e) {
@@ -115,7 +115,7 @@ async function loadEntry() {
     state.entry = null;
     if (!state.user || !state.ls) return;
     const { data, error } = await sb.from('entries')
-        .select('id, late_matchweek, created_at, updated_at')
+        .select('id, late_gameweek, created_at, updated_at')
         .eq('league_season_id', state.ls.id).eq('user_id', state.user.id).maybeSingle();
     if (error) console.error('entry', error);
     state.entry = data;
@@ -183,10 +183,10 @@ async function onSave() {
         });
         if (!ok) return;
     } else if (p === 'late') {
-        const mw = Math.max(state.ls.started_matchweek || 0, 1);
+        const gw = Math.max(state.ls.started_gameweek || 0, 1);
         const ok = await confirmDialog({
             title: 'Submit late entry?',
-            body: `The season has already started (matchweek ${mw}). A late entry is final: you will not be able to edit it, and it will show an MW ${mw} badge.`,
+            body: `The season has already started (gameweek ${gw}). A late entry is final: you will not be able to edit it, and it will show a GW ${gw} badge.`,
             confirmLabel: 'Submit',
         });
         if (!ok) return;
@@ -203,7 +203,7 @@ async function onSave() {
         });
         const body = await r.json().catch(() => ({}));
         if (!r.ok) throw new Error(body.error || `HTTP ${r.status}`);
-        toast(body.mode === 'late' ? `Late entry submitted (MW ${body.late_matchweek})` : 'Prediction saved');
+        toast(body.mode === 'late' ? `Late entry submitted (GW ${body.late_gameweek})` : 'Prediction saved');
     } catch (e) {
         const msgs = {
             entry_locked: 'Your entry is locked and can no longer be changed',

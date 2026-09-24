@@ -43,7 +43,7 @@ export async function getSeasonTeams(leagueSeasonId) {
 // Entries with their picks, earliest submission first.
 export async function getEntries(leagueSeasonId) {
     return check(await sb.from('entries')
-        .select('id, user_id, late_matchweek, created_at, entry_picks(position, team_id)')
+        .select('id, user_id, guest_key, guest_display_name, late_gameweek, created_at, entry_picks(position, team_id)')
         .eq('league_season_id', leagueSeasonId)
         .order('created_at', { ascending: true }));
 }

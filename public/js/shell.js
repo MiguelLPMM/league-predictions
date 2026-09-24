@@ -5,19 +5,12 @@
 import { onUser, signInWithGoogle, signOut, userName, userAvatar } from './auth.js';
 import { showPendingToast } from './notify.js';
 import { isAdminUser } from './adminConfig.js';
+import { LEAGUES, LEAGUE_SLUGS } from './leagues.js';
+import { maybeShowGuestClaimPrompt } from './guestClaimPrompt.js';
 
-const LEAGUES = [
-    ['premierleague', 'Premier League'],
-    ['laliga', 'La Liga'],
-    ['bundesliga', 'Bundesliga'],
-    ['seriea', 'Serie A'],
-    ['ligue1', 'Ligue 1'],
-    ['ligaportugal', 'Liga Portugal'],
-];
+export { LEAGUE_SLUGS };
 
 const esc = (s) => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-
-export const LEAGUE_SLUGS = LEAGUES.map(([slug]) => slug);
 
 export function rememberLeague(league) {
     try { localStorage.setItem('league', league); } catch { /* storage unavailable */ }
@@ -80,6 +73,7 @@ export function initShell({ league, page = 'predictions' }) {
 
     onUser((user) => {
         document.getElementById('nav-admin').hidden = !isAdminUser(user);
+        maybeShowGuestClaimPrompt(user);
         const account = document.getElementById('sidebar-account');
         if (user) {
             const avatar = userAvatar(user);

@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v5';
+const CACHE_VERSION = 'v6';
 const SHELL_CACHE = `predictions-shell-${CACHE_VERSION}`;
 const API_CACHE = `predictions-api-${CACHE_VERSION}`;
 
@@ -17,6 +17,9 @@ const SHELL_FILES = [
   '/js/admin.js',
   '/js/adminConfig.js',
   '/js/teamMatch.js',
+  '/js/leagues.js',
+  '/js/guestClaimPrompt.js',
+  '/js/api/guestClaims.js',
   '/js/api/leaderboard.js',
   '/js/supabaseClient.js',
   '/vendor/supabase.js',

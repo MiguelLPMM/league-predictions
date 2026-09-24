@@ -152,7 +152,8 @@ async function load() {
         const profile = profiles.get(entry.user_id);
         return {
             entry,
-            name: profile?.display_name || 'Player',
+            // guests (no account) carry their own name; real accounts use their display name
+            name: (entry.user_id ? profile?.display_name : entry.guest_display_name) || 'Player',
             avatar: profile?.avatar_url || '',
             isSelf: Boolean(state.user && entry.user_id === state.user.id),
             picks,
@@ -175,7 +176,7 @@ function columnOrder(results) {
 }
 
 function chipHtml(r, { avatar }) {
-    const badge = r.entry.late_matchweek ? `<span class="lb-badge">MW ${r.entry.late_matchweek}</span>` : '';
+    const badge = r.entry.late_gameweek ? `<span class="lb-badge">GW ${r.entry.late_gameweek}</span>` : '';
     const img = avatar && r.avatar ? `<img src="${esc(r.avatar)}" alt="" referrerpolicy="no-referrer">` : '';
     return `<span class="lb-chip" tabindex="0" data-entry="${r.entry.id}">${img}<span class="lb-name">${esc(r.name)}</span>${badge}</span>`;
 }
@@ -253,7 +254,7 @@ function openDrilldown(entryId) {
     const r = state.data.results.find((x) => x.entry.id === entryId);
     if (!r) return;
     const { teams, actualRank } = state.data;
-    $('drilldown-user').innerHTML = `${r.avatar ? `<img src="${esc(r.avatar)}" alt="" referrerpolicy="no-referrer">` : ''}<span class="lb-name">${esc(r.name)}</span>${r.entry.late_matchweek ? `<span class="lb-badge">MW ${r.entry.late_matchweek}</span>` : ''}`;
+    $('drilldown-user').innerHTML = `${r.avatar ? `<img src="${esc(r.avatar)}" alt="" referrerpolicy="no-referrer">` : ''}<span class="lb-name">${esc(r.name)}</span>${r.entry.late_gameweek ? `<span class="lb-badge">GW ${r.entry.late_gameweek}</span>` : ''}`;
     $('drilldown-body').innerHTML = r.picks.map((p) => {
         const team = teams.get(p.team_id);
         const actual = actualRank.get(p.team_id);

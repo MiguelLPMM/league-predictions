@@ -351,3 +351,25 @@ dialog.drilldown[open] { display: flex; flex-direction: column; }
 .crest-preview { width: 26px; height: 26px; object-fit: contain; vertical-align: middle; }
 .fd-id-input { width: 7em; font: inherit; padding: 5px 8px; border-radius: 8px; border: 1px solid #e6e8f0; }
 .match-table td:first-child.crest-cell { font-weight: normal; }
+
+/* ---------- guests, claims ---------- */
+.admin-form { display: grid; gap: 6px; }
+.admin-form label { font-size: .85rem; color: #6b7280; margin-top: 4px; }
+.admin-form input[type="text"], .admin-form input[type="email"], .admin-form select {
+  font: inherit; padding: 8px 10px; border-radius: 10px; border: 1px solid #e6e8f0; background: #f5f6fb; min-width: 0;
+}
+.admin-form .admin-row { margin-bottom: 0; }
+.admin-form .admin-row input { flex: 1 1 auto; }
+.claim-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid #f0f0f5; flex-wrap: wrap; }
+.claim-who { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.claim-who img { width: 32px; height: 32px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+.claim-actions { display: flex; gap: 8px; }
+
+dialog.claim-dialog { width: min(92vw, 460px); }
+.claim-list { display: grid; gap: 8px; margin-bottom: 16px; max-height: 50vh; overflow-y: auto; }
+.claim-option {
+  display: grid; gap: 2px; text-align: left; font: inherit; cursor: pointer;
+  padding: 10px 12px; border-radius: 12px; border: 1px solid #e6e8f0; background: #f5f6fb; color: #111;
+}
+.claim-option:hover { background: #eef1fb; border-color: #1e40af; }
+.claim-option span { font-size: .82rem; color: #6b7280; }
