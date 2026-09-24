@@ -138,11 +138,29 @@ body {
 .nav-leagues::-webkit-scrollbar { display: none; }
 
 .nav-leagues a {
+  display: inline-flex;
+  align-items: center;
+  gap: .5em;
   text-decoration: none;
   color: var(--text);
   padding: 6px 10px;
   border-radius: 10px;
   white-space: nowrap;
+}
+
+.nav-logo {
+  width: 22px; height: 22px; object-fit: contain; flex: 0 0 auto;
+  background: var(--logo-backing); border-radius: 6px; padding: 1px;
+}
+.nav-leagues a.no-logo .nav-logo { display: none; }
+
+/* narrow screens: logos only, the name comes back if a logo fails to load */
+@media (max-width: 900px) {
+  .nav { gap: 8px; }
+  .nav-leagues { gap: 2px; }
+  .nav-leagues a { padding: 6px 5px; }
+  .nav-leagues a .nav-name { display: none; }
+  .nav-leagues a.no-logo .nav-name { display: inline; }
 }
 
 .nav-leagues a.active {

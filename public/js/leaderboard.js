@@ -4,6 +4,7 @@
 // who can see what is enforced by RLS (entries stay hidden until the reveal).
 import { onUser } from './auth.js';
 import { initShell, lastLeague, LEAGUE_SLUGS } from './shell.js';
+import { leagueLogo } from './leagues.js';
 import { computeOffsets, formatOff } from './scoring.js';
 import { getFavorites, addFavoriteUser, removeFavoriteUser, addFavoriteGuest, removeFavoriteGuest } from './api/favorites.js';
 import {
@@ -106,7 +107,7 @@ function renderHeader(league) {
     if (league) document.title = `${league.name} Leaderboard`;
     $('header').innerHTML = `
         <div class="title">
-            ${league?.emblem ? `<img class="league-logo" src="${esc(league.emblem)}" alt="">` : ''}
+            <img class="league-logo" src="${leagueLogo(LEAGUE)}" alt="" onerror="this.style.display='none'">
             <h1>${esc(league?.name || 'Leaderboard')}</h1>
         </div>
         <div class="actions"><select id="season-select" class="season-select" aria-label="Season" hidden></select></div>`;

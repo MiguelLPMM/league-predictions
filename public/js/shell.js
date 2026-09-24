@@ -5,7 +5,7 @@
 import { onUser, signInWithGoogle, signOut, userName, userAvatar } from './auth.js';
 import { showPendingToast } from './notify.js';
 import { isAdminUser } from './adminConfig.js';
-import { LEAGUES, LEAGUE_SLUGS } from './leagues.js';
+import { LEAGUES, LEAGUE_SLUGS, leagueLogo } from './leagues.js';
 import { maybeShowGuestClaimPrompt } from './guestClaimPrompt.js';
 import { getTheme, setTheme } from './theme.js';
 
@@ -37,7 +37,9 @@ export function initShell({ league, page = 'predictions' }) {
         </button>
         <div class="nav-leagues">
             ${LEAGUES.map(([slug, label]) =>
-                `<a href="${pageHref(slug)}" class="${slug === league && page !== 'profile' ? 'active' : ''}">${label}</a>`).join('')}
+                `<a href="${pageHref(slug)}" class="${slug === league && page !== 'profile' ? 'active' : ''}" title="${label}" aria-label="${label}">` +
+                `<img class="nav-logo" src="${leagueLogo(slug)}" alt="" onerror="this.closest('a').classList.add('no-logo')">` +
+                `<span class="nav-name">${label}</span></a>`).join('')}
         </div>
         <div class="theme-switch" id="theme-switch"></div>`;
 

@@ -2,6 +2,7 @@
 import { supabaseClient as sb } from './supabaseClient.js';
 import { onUser, getAccessToken } from './auth.js';
 import { initShell, confirmDialog, lastLeague, LEAGUE_SLUGS } from './shell.js';
+import { leagueLogo } from './leagues.js';
 import { toast } from './notify.js';
 
 const requested = new URLSearchParams(location.search).get('league');
@@ -32,11 +33,11 @@ async function init() {
     const info = await loadLeagueInfo(LEAGUE);
     if (info) {
         document.title = `${info.name} Prediction`;
-        ensureFavicon(info.emblem);
+        ensureFavicon(leagueLogo(LEAGUE));
 
         header.innerHTML = `
         <div class="title">
-            <img class="league-logo" src="${esc(info.emblem || '')}" alt="">
+            <img class="league-logo" src="${leagueLogo(LEAGUE)}" alt="" onerror="this.style.display='none'">
             <h1>${esc(info.name)}</h1>
         </div>
         <div class="actions">
@@ -260,8 +261,7 @@ function ensureFavicon(url) {
         link.rel = 'icon';
         document.head.appendChild(link);
     }
-    // best guess type (many emblems are SVG)
-    if (url.endsWith('.svg')) link.type = 'image/svg+xml';
+    link.type = 'image/png';
     link.href = url;
 }
 

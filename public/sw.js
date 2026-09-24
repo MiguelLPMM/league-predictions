@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v8';
+const CACHE_VERSION = 'v9';
 const SHELL_CACHE = `predictions-shell-${CACHE_VERSION}`;
 const API_CACHE = `predictions-api-${CACHE_VERSION}`;
 
@@ -30,6 +30,7 @@ const SHELL_FILES = [
   '/manifest.webmanifest',
   '/icons/icon-192.png',
   '/icons/icon-512.png',
+  ...['premierleague', 'laliga', 'bundesliga', 'seriea', 'ligue1', 'ligaportugal'].map((s) => `/leagues/${s}.png`),
 ];
 
 self.addEventListener('install', (event) => {

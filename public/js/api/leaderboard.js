@@ -9,7 +9,7 @@ const check = ({ data, error }) => {
 };
 
 export async function getLeague(slug) {
-    return check(await sb.from('leagues').select('slug, name, emblem').eq('slug', slug).maybeSingle());
+    return check(await sb.from('leagues').select('slug, name').eq('slug', slug).maybeSingle());
 }
 
 export async function getCurrentSeasonYear() {

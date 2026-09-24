@@ -11,5 +11,9 @@ export const LEAGUES = [
 export const LEAGUE_SLUGS = LEAGUES.map(([slug]) => slug);
 export const LEAGUE_LABELS = Object.fromEntries(LEAGUES);
 
+// The league's emblem without its wordmark (the name is always shown beside it).
+// Built by scripts/generate-league-logos.js.
+export const leagueLogo = (slug) => `/leagues/${slug}.png`;
+
 // season_year 2025 -> "2025/26"
 export const seasonLabel = (year) => `${year}/${String(year + 1).slice(-2)}`;
