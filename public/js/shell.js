@@ -25,6 +25,15 @@ export function lastLeague() {
     return LEAGUE_SLUGS[0];
 }
 
+// Pages with a season selector call this so switching league keeps the season:
+// the league links in the top bar get &season=<year> (the target page falls back to
+// its own default if that league has no such season).
+export function setNavSeason(year) {
+    document.querySelectorAll('.nav-leagues a[data-base]').forEach((a) => {
+        a.href = year ? `${a.dataset.base}&season=${year}` : a.dataset.base;
+    });
+}
+
 export function initShell({ league, page = 'predictions' }) {
     rememberLeague(league);
     const pageHref = (slug) => `/${page === 'profile' ? 'predictions' : page}?league=${slug}`;
@@ -37,7 +46,7 @@ export function initShell({ league, page = 'predictions' }) {
         </button>
         <div class="nav-leagues">
             ${LEAGUES.map(([slug, label]) =>
-                `<a href="${pageHref(slug)}" class="${slug === league && page !== 'profile' ? 'active' : ''}" title="${label}" aria-label="${label}">` +
+                `<a href="${pageHref(slug)}" data-base="${pageHref(slug)}" class="${slug === league && page !== 'profile' ? 'active' : ''}" title="${label}" aria-label="${label}">` +
                 `<img class="nav-logo" src="${leagueLogo(slug)}" alt="" onerror="this.closest('a').classList.add('no-logo')">` +
                 `<span class="nav-name">${label}</span></a>`).join('')}
         </div>

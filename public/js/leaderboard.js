@@ -3,7 +3,7 @@
 // drill-down with one user's full predicted table. Scoring lives in scoring.js;
 // who can see what is enforced by RLS (entries stay hidden until the reveal).
 import { onUser } from './auth.js';
-import { initShell, lastLeague, LEAGUE_SLUGS } from './shell.js';
+import { initShell, lastLeague, LEAGUE_SLUGS, setNavSeason } from './shell.js';
 import { leagueLogo } from './leagues.js';
 import { computeOffsets, formatOff } from './scoring.js';
 import { getFavorites, addFavoriteUser, removeFavoriteUser, addFavoriteGuest, removeFavoriteGuest } from './api/favorites.js';
@@ -86,6 +86,7 @@ async function init() {
     const years = state.seasons.map((s) => s.season_year);
     state.seasonYear = years.includes(wanted) ? wanted : years.includes(current) ? current : years[0];
     renderSeasonSelect();
+    announceSeason();
 
     document.querySelectorAll('.view-tab').forEach((tab) => tab.addEventListener('click', () => setView(tab.dataset.view)));
 
@@ -113,6 +114,16 @@ function renderHeader(league) {
         <div class="actions"><select id="season-select" class="season-select" aria-label="Season" hidden></select></div>`;
 }
 
+// The season on screen becomes the address (a season the league doesn't have was replaced by
+// a default) and is carried by the league links, so switching league keeps it.
+function announceSeason() {
+    const url = new URL(location.href);
+    url.searchParams.set('league', LEAGUE);
+    url.searchParams.set('season', state.seasonYear);
+    history.replaceState(null, '', url.search);
+    setNavSeason(state.seasonYear);
+}
+
 function renderSeasonSelect() {
     const select = $('season-select');
     if (!select || !state.seasons.length) return;
@@ -122,7 +133,7 @@ function renderSeasonSelect() {
     select.hidden = false;
     select.addEventListener('change', () => {
         state.seasonYear = Number(select.value);
-        history.replaceState(null, '', `?league=${LEAGUE}&season=${state.seasonYear}`);
+        announceSeason();
         load();
     });
 }

@@ -24,31 +24,6 @@
       </div>
 
       <div class="admin-card">
-        <h2>Season table</h2>
-        <p class="hint">For seasons before 23/24 (not available from the API). Paste the final table, one team per line, 1st place first. If every team matches a known one it is saved straight away; otherwise you only review the ones that didn't match (they can become new teams). Saving concludes the season.</p>
-        <div class="admin-row">
-          <label for="season-pick">Season</label>
-          <select id="season-pick" class="season-select"></select>
-          <span class="pill" id="season-status"></span>
-          <button class="btn secondary small" id="conclude-btn">Reopen season</button>
-        </div>
-        <textarea id="table-input" rows="12" placeholder="Manchester City&#10;Liverpool&#10;Chelsea&#10;…" spellcheck="false"></textarea>
-        <div class="admin-actions">
-          <button class="btn" id="save-table-btn">Save table</button>
-        </div>
-        <div id="match-result" hidden>
-          <p class="hint" id="match-summary"></p>
-          <table class="match-table">
-            <thead><tr><th>#</th><th>You typed</th><th>Team</th></tr></thead>
-            <tbody id="match-rows"></tbody>
-          </table>
-          <div class="admin-actions">
-            <button class="btn" id="table-confirm-btn">Save table</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="admin-card">
         <h2>Import a guest entry</h2>
         <p class="hint">A past player with no account, for <b class="league-name"></b>. Give the same guest key to every entry of the same person so they can be linked to an account in one go; typing an existing key fills in the name. Importing the same key and season again replaces it. If every team matches, the entry is imported straight away; otherwise you only choose the ones that didn't match.</p>
         <div class="admin-form">
@@ -113,6 +88,31 @@
         </div>
         <div class="admin-actions">
           <button class="btn" id="rename-btn">Rename</button>
+        </div>
+      </div>
+
+      <div class="admin-card">
+        <h2>Season table</h2>
+        <p class="hint">For seasons before 23/24 (not available from the API). Paste the final table, one team per line, 1st place first. If every team matches a known one it is saved straight away; otherwise you only review the ones that didn't match (they can become new teams). Saving concludes the season.</p>
+        <div class="admin-row">
+          <label for="season-pick">Season</label>
+          <select id="season-pick" class="season-select"></select>
+          <span class="pill" id="season-status"></span>
+          <button class="btn secondary small" id="conclude-btn">Reopen season</button>
+        </div>
+        <textarea id="table-input" rows="12" placeholder="Manchester City&#10;Liverpool&#10;Chelsea&#10;…" spellcheck="false"></textarea>
+        <div class="admin-actions">
+          <button class="btn" id="save-table-btn">Save table</button>
+        </div>
+        <div id="match-result" hidden>
+          <p class="hint" id="match-summary"></p>
+          <table class="match-table">
+            <thead><tr><th>#</th><th>You typed</th><th>Team</th></tr></thead>
+            <tbody id="match-rows"></tbody>
+          </table>
+          <div class="admin-actions">
+            <button class="btn" id="table-confirm-btn">Save table</button>
+          </div>
         </div>
       </div>
 

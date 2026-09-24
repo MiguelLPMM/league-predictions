@@ -5,7 +5,7 @@
 // in football-data ids for hand-made teams.
 import { supabaseClient as sb } from './supabaseClient.js';
 import { onUser, getAccessToken } from './auth.js';
-import { initShell, confirmDialog, lastLeague, LEAGUE_SLUGS } from './shell.js';
+import { initShell, confirmDialog, lastLeague, LEAGUE_SLUGS, setNavSeason } from './shell.js';
 import { toast } from './notify.js';
 import { isAdminUser } from './adminConfig.js';
 import { matchTeams } from './teamMatch.js';
@@ -15,6 +15,10 @@ import { describeSeasons } from './guestClaimPrompt.js';
 
 const requested = new URLSearchParams(location.search).get('league');
 const LEAGUE = LEAGUE_SLUGS.includes(requested) ? requested : lastLeague();
+
+// The season carried over from the previous league (?season=YEAR) and kept in sync with the
+// season selectors, so switching league in the top bar keeps it.
+let carriedYear = Number(new URLSearchParams(location.search).get('season')) || null;
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -65,12 +69,12 @@ async function start() {
     document.querySelectorAll('.league-name').forEach((el) => { el.textContent = league?.name || LEAGUE; });
 
     $('refresh-btn').addEventListener('click', refreshLeague);
-    $('season-pick').addEventListener('change', loadSeason);
+    $('season-pick').addEventListener('change', () => { rememberSeasonFrom(state.seasons, $('season-pick').value); loadSeason(); });
     $('save-table-btn').addEventListener('click', startSaveTable);
     $('table-confirm-btn').addEventListener('click', confirmTable);
     $('conclude-btn').addEventListener('click', toggleConcluded);
 
-    $('import-season').addEventListener('change', loadImportTeams);
+    $('import-season').addEventListener('change', () => { rememberSeasonFrom(state.importSeasons, $('import-season').value); loadImportTeams(); });
     $('import-key').addEventListener('input', fillNameFromKey);
     $('import-btn').addEventListener('click', startImport);
     $('import-confirm-btn').addEventListener('click', confirmImport);
@@ -167,6 +171,8 @@ async function loadSeasons() {
     state.seasons = data;
 
     $('season-pick').innerHTML = data.map((s) => `<option value="${s.id}">${esc(s.seasons?.label || s.season_year)}</option>`).join('');
+    const carried = data.find((s) => s.season_year === carriedYear);
+    if (carried) $('season-pick').value = carried.id;
 
     // every team ever seen in this league: the candidates for matching
     const { data: all } = await sb.from('league_seasons').select('id').eq('league', LEAGUE);
@@ -288,7 +294,18 @@ async function loadImportSeasons() {
     if (error) { console.error('import seasons', error); return; }
     state.importSeasons = data;
     $('import-season').innerHTML = data.map((s) => `<option value="${s.id}">${esc(seasonLabel(s.season_year))}</option>`).join('');
+    const carried = data.find((s) => s.season_year === carriedYear);
+    if (carried) $('import-season').value = carried.id;
+    rememberSeasonFrom(data, $('import-season').value);
     if (data.length) await loadImportTeams();
+}
+
+// A season selector changed (or was loaded): remember its year so the league links carry it.
+function rememberSeasonFrom(list, id) {
+    const hit = list.find((x) => x.id === id);
+    if (!hit) return;
+    carriedYear = hit.season_year;
+    setNavSeason(carriedYear);
 }
 
 async function loadImportTeams() {
