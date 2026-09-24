@@ -40,15 +40,15 @@
   "crons": [
     {
       "path": "/api/cron/sync?league=premierleague",
-      "schedule": "0 3 * * *"
+      "schedule": "0 0 * * *"
     },
     {
       "path": "/api/cron/sync?league=laliga",
-      "schedule": "0 4 * * *"
+      "schedule": "0 2 * * *"
     },
     {
       "path": "/api/cron/sync?league=bundesliga",
-      "schedule": "0 5 * * *"
+      "schedule": "0 4 * * *"
     },
     {
       "path": "/api/cron/sync?league=seriea",
@@ -56,11 +56,11 @@
     },
     {
       "path": "/api/cron/sync?league=ligue1",
-      "schedule": "0 7 * * *"
+      "schedule": "0 8 * * *"
     },
     {
       "path": "/api/cron/sync?league=ligaportugal",
-      "schedule": "0 8 * * *"
+      "schedule": "0 10 * * *"
     }
   ]
 }
