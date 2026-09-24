@@ -48,6 +48,7 @@ app.get('/api/teams/:league', async (req, res) => {
   }
 });
 
+app.post('/api/admin/sync', require('../api/admin/sync'));
 app.post('/api/entries/:league', require('../api/entries/[league]'));
 app.get('/api/cron/sync', require('../api/cron/sync'));
 

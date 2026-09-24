@@ -4,6 +4,7 @@
 // selector keeps you on the same kind of page when you switch league.
 import { onUser, signInWithGoogle, signOut, userName, userAvatar } from './auth.js';
 import { showPendingToast } from './notify.js';
+import { isAdminUser } from './adminConfig.js';
 
 const LEAGUES = [
     ['premierleague', 'Premier League'],
@@ -60,6 +61,7 @@ export function initShell({ league, page = 'predictions' }) {
         <div class="sidebar-links">
             <a href="/predictions?league=${league}" class="${page === 'predictions' ? 'active' : ''}">Predictions</a>
             <a href="/leaderboard?league=${league}" class="${page === 'leaderboard' ? 'active' : ''}">Leaderboard</a>
+            <a href="/admin?league=${league}" id="nav-admin" class="${page === 'admin' ? 'active' : ''}" hidden>Admin</a>
         </div>
         <div class="sidebar-account" id="sidebar-account"></div>`;
     document.body.append(overlay, sidebar);
@@ -77,6 +79,7 @@ export function initShell({ league, page = 'predictions' }) {
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') setOpen(false); });
 
     onUser((user) => {
+        document.getElementById('nav-admin').hidden = !isAdminUser(user);
         const account = document.getElementById('sidebar-account');
         if (user) {
             const avatar = userAvatar(user);

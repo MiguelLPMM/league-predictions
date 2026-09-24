@@ -321,3 +321,33 @@ dialog.drilldown[open] { display: flex; flex-direction: column; }
 .drilldown-table th:nth-child(2), .drilldown-table td:nth-child(2) { width: 2.4em; }
 .drilldown-table th:nth-child(4), .drilldown-table td:nth-child(4) { width: 3em; }
 .drilldown-table img { width: 22px; height: 22px; object-fit: contain; vertical-align: middle; }
+
+
+/* ---------- admin ---------- */
+.admin-section { max-width: 760px; }
+.admin-card { border: 1px solid #e6e8f0; border-radius: 16px; padding: 16px; margin-bottom: 16px; background: #fff; }
+.admin-card h2 { margin: 0 0 6px; font-size: 1.1rem; }
+.admin-card .hint { margin: 0 0 12px; color: #374151; line-height: 1.4; font-size: .92rem; }
+.admin-row { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; flex-wrap: wrap; }
+.admin-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+.admin-card textarea {
+  width: 100%; font: inherit; padding: 10px; border-radius: 12px; border: 1px solid #e6e8f0;
+  background: #f5f6fb; resize: vertical;
+}
+.admin-card .btn:disabled { opacity: .5; cursor: not-allowed; }
+.pill { display: inline-block; padding: 1px 10px; border-radius: 999px; background: #f0f3ff; color: #1e40af; font-size: .8rem; font-weight: 700; }
+.pill.done { background: #e7f6ec; color: #17673a; }
+.match-table { width: 100%; border-collapse: collapse; margin-top: 14px; font-size: .92rem; }
+.match-table th { text-align: left; color: #6b7280; font-weight: 600; font-size: .8rem; padding: 4px; }
+.match-table td { padding: 4px; border-top: 1px solid #f0f0f5; vertical-align: middle; }
+.match-table td:first-child { width: 2.2em; text-align: center; font-weight: 700; }
+.match-table select { width: 100%; font: inherit; padding: 5px 6px; border-radius: 8px; border: 1px solid #e6e8f0; background: #fff; }
+.match-table tr.is-new select { border-color: #d97706; background: #fff8eb; }
+.match-table tr.is-dup select { border-color: #b91c1c; background: #fdecec; }
+
+.mono { font-family: ui-monospace, Consolas, monospace; font-size: .85em; }
+.hint-inline { color: #6b7280; font-size: .8rem; }
+.crest-cell { width: 2.6em; text-align: center; }
+.crest-preview { width: 26px; height: 26px; object-fit: contain; vertical-align: middle; }
+.fd-id-input { width: 7em; font: inherit; padding: 5px 8px; border-radius: 8px; border: 1px solid #e6e8f0; }
+.match-table td:first-child.crest-cell { font-weight: normal; }

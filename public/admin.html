@@ -1,0 +1,61 @@
+<!doctype html><html lang="en"><head>
+  <meta charset="utf-8"/><meta name="viewport" content="width=device-width,initial-scale=1"/>
+  <title>Admin · League Predictions</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" href="/icons/icon-32.png">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <meta name="theme-color" content="#1e40af">
+  <link rel="stylesheet" href="/style.css">
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <script src="/vendor/supabase.js" defer></script>
+  <script type="module" src="/js/admin.js"></script>
+</head><body>
+  <nav class="nav" id="nav"></nav>
+  <div class="header wide" id="header"><div class="title"><h1>Admin</h1></div></div>
+  <section class="section admin-section" id="section">
+    <p class="lb-gate" id="admin-gate">Checking access…</p>
+    <div id="admin-content" hidden>
+
+      <div class="admin-card">
+        <h2>League data</h2>
+        <p class="hint">Pull the latest teams, standings and matchweek for <b id="league-name"></b> from football-data.org. A league can be refreshed at most once a minute.</p>
+        <button class="btn" id="refresh-btn">Refresh league data</button>
+      </div>
+
+      <div class="admin-card">
+        <h2>Season table</h2>
+        <p class="hint">For seasons before 23/24 (not available from the API). Paste the final table, one team per line, 1st place first, then check the matches below. Saving concludes the season.</p>
+        <div class="admin-row">
+          <label for="season-pick">Season</label>
+          <select id="season-pick" class="season-select"></select>
+          <span class="pill" id="season-status"></span>
+          <button class="btn secondary small" id="conclude-btn">Reopen season</button>
+        </div>
+        <textarea id="table-input" rows="12" placeholder="Manchester City&#10;Liverpool&#10;Chelsea&#10;…" spellcheck="false"></textarea>
+        <div class="admin-actions">
+          <button class="btn secondary" id="match-btn">Match teams</button>
+        </div>
+        <div id="match-result" hidden>
+          <table class="match-table">
+            <thead><tr><th>#</th><th>You typed</th><th>Team</th></tr></thead>
+            <tbody id="match-rows"></tbody>
+          </table>
+          <div class="admin-actions">
+            <button class="btn" id="save-table-btn">Save table</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="admin-card">
+        <h2>Teams missing a football-data id</h2>
+        <p class="hint">Hand-made teams for <b id="league-name-2"></b>. The id is the number in the crest address, <span class="mono">crests.football-data.org/<b>id</b>.png</span>. Saving it also sets the crest.</p>
+        <p class="hint" id="missing-empty" hidden>Every team in this league has an id.</p>
+        <table class="match-table" id="missing-table" hidden>
+          <thead><tr><th></th><th>Team</th><th>Football-data id</th><th></th></tr></thead>
+          <tbody id="missing-rows"></tbody>
+        </table>
+      </div>
+
+    </div>
+  </section>
+</body></html>
