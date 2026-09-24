@@ -31,6 +31,7 @@
   --shadow: rgba(0, 0, 0, .2);
   --shadow-soft: rgba(0, 0, 0, .15);
   --logo-backing: transparent;
+  --avatar-blank: #dde2ee;
   --crest-filter: none;
   color-scheme: light;
 }
@@ -65,6 +66,7 @@
   --shadow: rgba(0, 0, 0, .5);
   --shadow-soft: rgba(0, 0, 0, .4);
   --logo-backing: #f1f3f8;
+    --avatar-blank: #333b54;
     --crest-filter: drop-shadow(0 0 1px rgba(255, 255, 255, .7));
     color-scheme: dark;
   }
@@ -99,6 +101,7 @@
   --shadow: rgba(0, 0, 0, .5);
   --shadow-soft: rgba(0, 0, 0, .4);
   --logo-backing: #f1f3f8;
+  --avatar-blank: #333b54;
   --crest-filter: drop-shadow(0 0 1px rgba(255, 255, 255, .7));
   color-scheme: dark;
 }
@@ -402,6 +405,8 @@ body.lb-page .lb-gate { flex: 0 0 auto; }
 /* who: avatar, name, late badge (shared by every view) */
 .lb-chip { display: inline-flex; align-items: center; gap: .4em; cursor: pointer; min-width: 0; }
 .lb-chip img, .drilldown-head img { width: 24px; height: 24px; border-radius: 50%; object-fit: cover; flex-shrink: 0; }
+/* placeholder for people without a photo (guests and accounts with no picture): same size, plain colour */
+.avatar-blank { width: 24px; height: 24px; border-radius: 50%; background: var(--avatar-blank); flex: 0 0 24px; display: inline-block; }
 .lb-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
 .lb-badge {
   font-size: .72em; font-weight: 700; padding: 1px 8px; border-radius: 999px;

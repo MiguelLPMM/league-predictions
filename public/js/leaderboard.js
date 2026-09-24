@@ -202,9 +202,12 @@ function columnOrder(results) {
     return [...results.filter((r) => r.isSelf), ...others.filter(isFavorite), ...others.filter((r) => !isFavorite(r))];
 }
 
+// the person's photo, or a plain circle of the same size when they have none
+const avatarHtml = (url) => (url ? `<img src="${esc(url)}" alt="" referrerpolicy="no-referrer">` : '<span class="avatar-blank" aria-hidden="true"></span>');
+
 function chipHtml(r, { avatar }) {
     const badge = r.entry.late_gameweek ? `<span class="lb-badge">GW ${r.entry.late_gameweek}</span>` : '';
-    const img = avatar && r.avatar ? `<img src="${esc(r.avatar)}" alt="" referrerpolicy="no-referrer">` : '';
+    const img = avatar ? avatarHtml(r.avatar) : '';
     // favoriting needs an account, and you never favorite yourself
     const fav = isFavorite(r);
     const star = state.user && !r.isSelf
@@ -313,7 +316,7 @@ function openDrilldown(entryId) {
     const r = state.data.results.find((x) => x.entry.id === entryId);
     if (!r) return;
     const { teams, actualRank } = state.data;
-    $('drilldown-user').innerHTML = `${r.avatar ? `<img src="${esc(r.avatar)}" alt="" referrerpolicy="no-referrer">` : ''}<span class="lb-name">${esc(r.name)}</span>${r.entry.late_gameweek ? `<span class="lb-badge">GW ${r.entry.late_gameweek}</span>` : ''}`;
+    $('drilldown-user').innerHTML = `${avatarHtml(r.avatar)}<span class="lb-name">${esc(r.name)}</span>${r.entry.late_gameweek ? `<span class="lb-badge">GW ${r.entry.late_gameweek}</span>` : ''}`;
     $('drilldown-body').innerHTML = r.picks.map((p) => {
         const team = teams.get(p.team_id);
         const actual = actualRank.get(p.team_id);
