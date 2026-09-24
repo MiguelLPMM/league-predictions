@@ -51,7 +51,14 @@ export function similarity(inputName, candidateName) {
         used.add(idx);
         return true;
     });
-    if (allAgree) return 0.9;
+    if (allAgree) {
+        // Words the user typed that the team does not have count against it ("Bayer
+        // Leverkusen" fits "Leverkusen" better than "Bayern"), while a team word the user
+        // left out is just an abbreviation ("City" for "Man City") and costs nothing.
+        const typedChars = a.join('').length;
+        const unmatched = a.filter((t) => !b.some((u) => tokensAgree(t, u))).join('').length;
+        return 0.9 - 0.3 * (unmatched / typedChars);
+    }
 
     const sa = a.join(' ');
     const sb = b.join(' ');
@@ -60,16 +67,33 @@ export function similarity(inputName, candidateName) {
 
 export const MATCH_THRESHOLD = 0.7;
 
+// Two candidates whose scores are this close are indistinguishable: the typed name fits
+// both ("City" fits Man City and Leicester City), so it must not be guessed.
+export const AMBIGUITY_MARGIN = 0.05;
+
 // names: typed names in table order. candidates: [{id, name, ...}].
-// Returns one entry per name: { input, match (candidate | null), score, options }
-// where options lists candidates best-first. Each candidate is auto-matched to at
-// most one name (the best pairing wins); a name with no good match gets match=null.
+// Returns one entry per name:
+//   { input, match, score, ambiguous, options }
+// match is null when there is no good match OR when the name fits more than one team
+// (ambiguous = true): those are left for a manual choice, never guessed. A single exact
+// name match is decisive even if other teams also fit loosely. Each candidate is
+// auto-matched to at most one name (the best pairing wins). options lists candidates
+// best-first.
 export function matchTeams(names, candidates) {
+    const scored = names.map((input) => candidates
+        .map((c) => ({ c, score: similarity(input, c.name) }))
+        .sort((x, y) => y.score - x.score));
+
+    const ambiguousAt = new Set();
     const pairs = [];
-    names.forEach((input, i) => candidates.forEach((c) => {
-        const score = similarity(input, c.name);
-        if (score >= MATCH_THRESHOLD) pairs.push({ i, c, score });
-    }));
+    scored.forEach((list, i) => {
+        const top = list[0];
+        if (!top || top.score < MATCH_THRESHOLD) return;
+        const rivals = list.slice(1).filter((o) => o.score >= MATCH_THRESHOLD && o.score >= top.score - AMBIGUITY_MARGIN);
+        const decisive = top.score === 1 && rivals.every((r) => r.score < 1);
+        if (rivals.length && !decisive) { ambiguousAt.add(i); return; }
+        pairs.push({ i, c: top.c, score: top.score });
+    });
     pairs.sort((x, y) => y.score - x.score);
 
     const chosen = new Map();
@@ -81,11 +105,13 @@ export function matchTeams(names, candidates) {
     }
 
     return names.map((input, i) => {
-        const options = [...candidates]
-            .map((c) => ({ c, score: similarity(input, c.name) }))
-            .sort((x, y) => y.score - x.score)
-            .map((o) => o.c);
         const pick = chosen.get(i);
-        return { input, match: pick?.c ?? null, score: pick?.score ?? 0, options };
+        return {
+            input,
+            match: pick?.c ?? null,
+            score: pick?.score ?? 0,
+            ambiguous: ambiguousAt.has(i),
+            options: scored[i].map((o) => o.c),
+        };
     });
 }

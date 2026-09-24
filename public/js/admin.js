@@ -231,9 +231,10 @@ function renderTableRows() {
     $('match-rows').innerHTML = open.map(({ m, i }) => `
         <tr data-i="${i}">
             <td>${i + 1}</td>
-            <td>${esc(m.input)}</td>
+            <td>${esc(m.input)}${m.ambiguous ? '<br><span class="hint-inline">fits several teams</span>' : ''}</td>
             <td><select data-i="${i}">
-                <option value="${NEW}" selected>＋ New team: ${esc(m.input)}</option>
+                ${m.ambiguous ? '<option value="" selected>— choose a team —</option>' : ''}
+                <option value="${NEW}"${m.ambiguous ? '' : ' selected'}>＋ New team: ${esc(m.input)}</option>
                 ${m.options.filter((c) => !taken.has(c.id)).map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join('')}
             </select></td>
         </tr>`).join('');
@@ -245,6 +246,7 @@ async function confirmTable() {
     const ls = currentSeason();
     if (!ls) return;
     flagRows($('match-rows'));
+    if ([...$('match-rows').querySelectorAll('select')].some((sel) => sel.value === '')) { toast('Choose a team for the names that fit several'); return; }
     if ($('match-rows').querySelector('.is-dup')) { toast('The same team is picked twice'); return; }
 
     const spec = state.matches.map((m) => (m.match ? { team_id: m.match.id } : null));
@@ -379,7 +381,7 @@ function renderImportRows() {
     $('import-rows').innerHTML = open.map(({ m, i }) => `
         <tr data-i="${i}">
             <td>${i + 1}</td>
-            <td>${esc(m.input)}</td>
+            <td>${esc(m.input)}${m.ambiguous ? '<br><span class="hint-inline">fits several teams</span>' : ''}</td>
             <td><select data-i="${i}">
                 <option value="" selected>— choose a team —</option>
                 ${m.options.filter((c) => !taken.has(c.id)).map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join('')}
