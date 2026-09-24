@@ -2,7 +2,7 @@
 // Google redirect): notifyNext() stores the message, the next page shows it.
 const KEY = 'pendingToast';
 
-export function toast(msg, ms = 1800) {
+export function toast(msg, ms = 2400) {
     let el = document.getElementById('toast');
     if (!el) {
         el = document.createElement('div');

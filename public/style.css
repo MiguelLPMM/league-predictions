@@ -324,7 +324,10 @@ body {
 /* toast */
 .toast {
   position: fixed;
-  top: 18px;
+  top: 64px; /* just below the top bar */
+  z-index: 2000; /* above the bar (10) and the sidebar (950) */
+  max-width: calc(100vw - 32px);
+  text-align: center;
   left: 50%;
   transform: translateX(-50%);
   background: var(--toast-bg);
