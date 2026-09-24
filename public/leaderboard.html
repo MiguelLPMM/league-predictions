@@ -21,18 +21,20 @@
       <button class="view-tab" data-view="breakdown">Breakdown</button>
       <button class="view-tab" data-view="table">Actual Table</button>
       <button class="view-tab" data-view="live">Leaderboard</button>
-      <button class="view-tab" data-view="history" disabled title="Coming soon">History</button>
+      <button class="view-tab" data-view="history">History</button>
     </div>
     <p class="lb-gate" id="lb-gate" hidden></p>
     <div class="lb-view" id="lb-live" hidden></div>
     <div class="lb-view" id="lb-table" hidden></div>
     <div class="lb-view" id="lb-breakdown" hidden></div>
+    <div class="lb-view" id="lb-history" hidden></div>
   </section>
   <dialog class="drilldown" id="drilldown">
     <div class="drilldown-head">
       <div class="lb-chip" id="drilldown-user"></div>
       <button class="copy-btn" id="drilldown-close" aria-label="Close"><span class="material-icons">close</span></button>
     </div>
+    <div class="drilldown-history" id="drilldown-history"></div>
     <table class="drilldown-table">
       <thead><tr><th></th><th></th><th>Team</th><th>Off</th></tr></thead>
       <tbody id="drilldown-body"></tbody>

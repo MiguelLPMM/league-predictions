@@ -9,6 +9,9 @@ import {
     listUnclaimedGuestIdentities, getMyPendingClaim, hasCompletedMerge, requestClaim, cancelClaim,
 } from './api/guestClaims.js';
 import { describeSeasons } from './guestClaimPrompt.js';
+import { LEAGUES, leagueLogo } from './leagues.js';
+import { loadMyHistory } from './api/history.js';
+import { mountHistoryChart } from './historyChart.js';
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -37,6 +40,7 @@ onUser((user) => {
     $('profile-content').hidden = false;
     renderAccount();
     renderClaim();
+    renderHistory();
 });
 
 async function renderAccount() {
@@ -150,4 +154,34 @@ async function cancelPending(pending) {
         toast('Could not cancel the request');
     }
     renderClaim();
+}
+
+/* -------- history: your score per season, one chart per league -------- */
+
+const charts = [];
+
+async function renderHistory() {
+    const area = $('history-area');
+    charts.forEach((c) => c.destroy());
+    charts.length = 0;
+    try {
+        const history = await loadMyHistory(currentUser.id);
+        area.innerHTML = LEAGUES.map(([slug, label]) => `
+            <div class="hist-league">
+                <h3><img class="hist-logo" src="${leagueLogo(slug)}" alt="" onerror="this.style.display='none'">${label}</h3>
+                <div id="hist-${slug}"></div>
+            </div>`).join('');
+        LEAGUES.forEach(([slug]) => {
+            const box = document.getElementById(`hist-${slug}`);
+            const data = history.get(slug);
+            if (!data || !data.series.length) {
+                box.innerHTML = '<p class="hint">No entries in this league yet.</p>';
+                return;
+            }
+            charts.push(mountHistoryChart(box, data, { height: 230, note: false }));
+        });
+    } catch (e) {
+        console.error('history', e);
+        area.innerHTML = '<p class="hint">Could not load your history right now.</p>';
+    }
 }

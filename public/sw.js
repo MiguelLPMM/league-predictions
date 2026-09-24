@@ -1,4 +1,4 @@
-const CACHE_VERSION = 'v11';
+const CACHE_VERSION = 'v14';
 const SHELL_CACHE = `predictions-shell-${CACHE_VERSION}`;
 const API_CACHE = `predictions-api-${CACHE_VERSION}`;
 
@@ -16,6 +16,8 @@ const SHELL_FILES = [
   '/js/notify.js',
   '/js/leaderboard.js',
   '/js/scoring.js',
+  '/js/historyChart.js',
+  '/js/api/history.js',
   '/js/admin.js',
   '/js/adminConfig.js',
   '/js/teamMatch.js',

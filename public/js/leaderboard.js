@@ -5,6 +5,8 @@
 import { onUser } from './auth.js';
 import { initShell, lastLeague, LEAGUE_SLUGS, setNavSeason } from './shell.js';
 import { leagueLogo } from './leagues.js';
+import { mountHistoryChart } from './historyChart.js';
+import { loadLeagueHistory } from './api/history.js';
 import { computeOffsets, formatOff } from './scoring.js';
 import { getFavorites, addFavoriteUser, removeFavoriteUser, addFavoriteGuest, removeFavoriteGuest } from './api/favorites.js';
 import {
@@ -18,7 +20,7 @@ const LEAGUE = LEAGUE_SLUGS.includes(requested) ? requested : lastLeague();
 
 let currentView = null; // the view on screen (a re-render must not fall back to ?view=)
 const VIEW_KEY = 'leaderboardView';
-const VIEWS = ['breakdown', 'table', 'live'];
+const VIEWS = ['breakdown', 'table', 'live', 'history'];
 
 const $ = (id) => document.getElementById(id);
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -28,6 +30,7 @@ const state = {
     seasons: [],       // league_seasons rows, newest first
     seasonYear: null,  // selected
     data: null,        // loaded leaderboard for the selected season
+    history: null,     // everyone's per-season scores in this league (History view)
     favUsers: new Set(),   // favorited accounts (signed-in only)
     favGuests: new Set(),  // favorited guest keys
 };
@@ -57,6 +60,32 @@ function setView(view) {
     try { localStorage.setItem(VIEW_KEY, view); } catch { /* storage unavailable */ }
     for (const v of VIEWS) $(`lb-${v}`).hidden = v !== view || !state.data;
     document.querySelectorAll('.view-tab').forEach((tab) => tab.classList.toggle('active', tab.dataset.view === view));
+    if (view === 'history' && state.data) showHistory();
+}
+
+// History view: everyone's score per season in this league, the selected season highlighted.
+// Loaded on first use and kept until the signed-in user changes.
+let historyChart = null;
+async function showHistory() {
+    const box = $('lb-history');
+    if (!state.history) {
+        box.innerHTML = '<p class="lb-gate">Loading…</p>';
+        try {
+            state.history = await loadLeagueHistory(LEAGUE, state.user?.id);
+        } catch (e) {
+            console.error('history', e);
+            box.innerHTML = '<p class="lb-gate">Could not load the history.</p>';
+            return;
+        }
+        historyChart = null;
+    }
+    if (currentView !== 'history') return; // the user moved on while it loaded
+    if (!historyChart) {
+        box.innerHTML = '';
+        historyChart = mountHistoryChart(box, state.history, { selectedYear: state.seasonYear, height: 340 });
+    } else {
+        historyChart.setSelectedYear(state.seasonYear);
+    }
 }
 
 function showGate(message) {
@@ -99,6 +128,7 @@ async function init() {
             load();
         } else if (id !== previous) {
             previous = id;
+            state.history = null;
             load();
         }
     });
@@ -323,9 +353,35 @@ function openDrilldown(entryId) {
         return `<tr><td>${p.position}</td><td>${crestHtml(team)}</td><td class="left">${esc(team?.name)}</td><td>${offHtml(actual == null ? null : p.position - actual)}</td></tr>`;
     }).join('');
     $('drilldown').showModal();
+    showDrilldownHistory(r);
+}
+
+// The same player's score in every season of this league, under their name.
+let drilldownChart = null;
+async function showDrilldownHistory(r) {
+    const box = $('drilldown-history');
+    drilldownChart?.destroy();
+    drilldownChart = null;
+    box.innerHTML = '';
+    try {
+        if (!state.history) state.history = await loadLeagueHistory(LEAGUE, state.user?.id);
+    } catch (e) {
+        console.error('drill-down history', e);
+        return;
+    }
+    if (!$('drilldown').open) return; // closed while it loaded
+    const key = r.entry.user_id ? `u:${r.entry.user_id}` : `g:${r.entry.guest_key}`;
+    const mine = state.history.series.find((s) => s.key === key);
+    if (!mine) return;
+    const first = mine.points[0].year;
+    drilldownChart = mountHistoryChart(box, {
+        seasons: state.history.seasons.filter((s) => s.year >= first),
+        series: [mine],
+    }, { selectedYear: state.seasonYear, height: 210, legend: false, note: false });
 }
 
 $('drilldown-close').addEventListener('click', () => $('drilldown').close());
+$('drilldown').addEventListener('close', () => { drilldownChart?.destroy(); drilldownChart = null; });
 $('drilldown').addEventListener('click', (e) => { if (e.target === $('drilldown')) $('drilldown').close(); });
 
 init();
